@@ -34,8 +34,15 @@ STATUS_ACTIVE="[●]"
 STATUS_DONE="[✓]"
 STATUS_FAILED="[✗]"
 
-# Spinner frames
+# Spinner frames - retro style
 SPINNER_FRAMES=("⠋" "⠙" "⠹" "⠸" "⠼" "⠴" "⠦" "⠧" "⠇" "⠏")
+SPINNER_ALT=("◐" "◓" "◑" "◒")
+SPINNER_DOTS=("⣾" "⣽" "⣻" "⢿" "⡿" "⣟" "⣯" "⣷")
+SPINNER_STAR=("✶" "✷" "✸" "✹" "✺" "✹" "✸" "✷")
+
+# Session token tracking
+_SESSION_TOKENS=0
+_SESSION_START_TIME=""
 
 # Progress bar
 PROGRESS_FILLED="█"
@@ -138,27 +145,26 @@ close_box() {
 # =============================================================================
 
 print_banner() {
-    local width
-    width=$(get_terminal_width)
-    [[ $width -gt 60 ]] && width=60
-
+    init_session_stats
     echo
-    draw_box "AGENT-K v${AGENTK_VERSION}" "$width"
-    close_box "$width"
-    echo
+    echo "${BOLD}${CYAN}╔═══════════════════════════════════════╗${RESET}"
+    echo "${BOLD}${CYAN}║${RESET}         ${BOLD}✦ AGENT-K ✦${RESET}         ${DIM}v${AGENTK_VERSION}${RESET}   ${BOLD}${CYAN}║${RESET}"
+    echo "${BOLD}${CYAN}╚═══════════════════════════════════════╝${RESET}"
 }
 
 print_mode_banner() {
     local mode="$1"
     local mode_display
+    local mode_icon
 
     case "$mode" in
-        dev) mode_display="Software Development Mode" ;;
-        ml)  mode_display="ML Research & Training Mode" ;;
-        *)   mode_display="$mode Mode" ;;
+        dev) mode_display="Development" ; mode_icon="⚡" ;;
+        ml)  mode_display="ML Research" ; mode_icon="🧠" ;;
+        *)   mode_display="$mode" ; mode_icon="◆" ;;
     esac
 
-    echo "${DIM}Mode: ${RESET}${CYAN}$mode_display${RESET}"
+    echo
+    echo "${DIM}$mode_icon $mode_display │ /help for commands │ /exit to quit${RESET}"
     echo
 }
 
@@ -203,25 +209,30 @@ print_all_agent_status() {
 }
 
 # =============================================================================
-# SPINNER
+# SPINNER - Claude Code Style
 # =============================================================================
 
 # Global spinner state
 _SPINNER_PID=""
 _SPINNER_MSG=""
+_SPINNER_START=""
 
 start_spinner() {
     local message="${1:-Working...}"
     _SPINNER_MSG="$message"
+    _SPINNER_START=$(date +%s)
 
     hide_cursor
 
     (
         local i=0
+        local start_time=$(date +%s)
         while true; do
-            printf "\r${YELLOW}%s${RESET} %s" "${SPINNER_FRAMES[$i]}" "$message"
-            i=$(( (i + 1) % ${#SPINNER_FRAMES[@]} ))
-            sleep 0.1
+            local elapsed=$(($(date +%s) - start_time))
+            local elapsed_str="${elapsed}s"
+            printf "\r${DIM}✢${RESET} ${CYAN}%s${RESET}${DIM} (%s)${RESET}  " "$message" "$elapsed_str"
+            i=$(( (i + 1) % 4 ))
+            sleep 0.25
         done
     ) &
 
@@ -239,13 +250,20 @@ stop_spinner() {
         _SPINNER_PID=""
     fi
 
+    # Calculate elapsed time
+    local elapsed=""
+    if [[ -n "$_SPINNER_START" ]]; then
+        elapsed=$(($(date +%s) - _SPINNER_START))
+        elapsed=" ${DIM}(${elapsed}s)${RESET}"
+    fi
+
     # Clear the spinner line
     printf "\r%${COLUMNS:-80}s\r" ""
 
     if [[ "$success" == "true" ]]; then
-        echo "${GREEN}${STATUS_DONE}${RESET} $final_message"
+        echo "${GREEN}✓${RESET} $final_message$elapsed"
     else
-        echo "${RED}${STATUS_FAILED}${RESET} $final_message"
+        echo "${RED}✗${RESET} $final_message$elapsed"
     fi
 
     show_cursor
@@ -391,16 +409,12 @@ print_agent_message() {
 }
 
 print_user_prompt() {
-    echo
-    printf "${GREEN}╭─ You ────────────────────────────────────────────────${RESET}\n"
-    printf "${GREEN}│${RESET} "
+    printf "\n${GREEN}>${RESET} "
 }
 
 print_focus_prompt() {
     local agent="$1"
-    echo
-    printf "${CYAN}╭─ ${BOLD}$agent${RESET}${CYAN} (focused) ──────────────────────────────────${RESET}\n"
-    printf "${CYAN}│${RESET} "
+    printf "\n${CYAN}$agent>${RESET} "
 }
 
 print_task_assignment() {
@@ -498,6 +512,64 @@ print_success() {
 print_info() {
     local message="$1"
     echo "${CYAN}${BOLD}Info:${RESET} $message"
+}
+
+# =============================================================================
+# SESSION STATS & TOKEN TRACKING
+# =============================================================================
+
+init_session_stats() {
+    _SESSION_START_TIME=$(date +%s)
+    _SESSION_TOKENS=0
+}
+
+add_tokens() {
+    local tokens="${1:-0}"
+    _SESSION_TOKENS=$((_SESSION_TOKENS + tokens))
+}
+
+format_tokens() {
+    local tokens="$1"
+    if [[ $tokens -ge 1000000 ]]; then
+        printf "%.1fM" "$(echo "scale=1; $tokens / 1000000" | bc)"
+    elif [[ $tokens -ge 1000 ]]; then
+        printf "%.1fk" "$(echo "scale=1; $tokens / 1000" | bc)"
+    else
+        echo "$tokens"
+    fi
+}
+
+print_session_stats() {
+    local elapsed=""
+    if [[ -n "${_SESSION_START_TIME:-}" ]]; then
+        local now=$(date +%s)
+        local secs=$(($now - $_SESSION_START_TIME))
+        local mins=$((secs / 60))
+        secs=$((secs % 60))
+        if [[ $mins -gt 0 ]]; then
+            elapsed="${mins}m ${secs}s"
+        else
+            elapsed="${secs}s"
+        fi
+    fi
+
+    local tokens_display
+    tokens_display=$(format_tokens "${_SESSION_TOKENS:-0}")
+
+    echo
+    print_divider "─"
+    printf "${DIM}Session: %s │ Tokens: ↑ %s${RESET}\n" "$elapsed" "$tokens_display"
+}
+
+print_status_line() {
+    local message="${1:-}"
+    local tokens="${2:-0}"
+    local elapsed="${3:-0}"
+
+    local tokens_display
+    tokens_display=$(format_tokens "$tokens")
+
+    printf "${DIM}✢ %s (ctrl+c to interrupt · %ss · ↑ %s tokens)${RESET}" "$message" "$elapsed" "$tokens_display"
 }
 
 # =============================================================================

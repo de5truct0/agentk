@@ -279,11 +279,12 @@ cmd_visual() {
 }
 
 cmd_exit() {
-    print_info "Ending session..."
-    end_session
-    kill_all_agents
     echo
-    echo "${GREEN}Goodbye!${RESET}"
+    kill_all_agents
+    print_session_stats
+    end_session
+    echo "${GREEN}✦ Goodbye!${RESET}"
+    echo
     exit 0
 }
 
@@ -384,9 +385,6 @@ run_interactive() {
     print_banner
     print_mode_banner "$AGENTK_MODE"
 
-    echo "Type your request or /help for commands."
-    echo
-
     # Main loop
     while true; do
         # Show prompt
@@ -412,8 +410,6 @@ run_interactive() {
 
         # Check for command
         if [[ "$input" == /* ]]; then
-            # Close user input box for commands
-            print_user_message_end
             local cmd="${input%% *}"
             local args="${input#* }"
             [[ "$cmd" == "$args" ]] && args=""
@@ -421,13 +417,13 @@ run_interactive() {
             continue
         fi
 
-        # Close user input box
-        print_user_message_end
+        # Show user message in a box
+        print_user_input_box "$input"
 
         # Regular input - send to orchestrator (or focused agent)
         local target_agent="${FOCUSED_AGENT:-orchestrator}"
 
-        # Show agent response box
+        # Show agent response
         print_agent_response_start "Orchestrator"
         printf "${CYAN}│${RESET} Analyzing task...\n"
 
