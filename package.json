@@ -1,0 +1,49 @@
+{
+  "name": "agentk",
+  "version": "1.0.0",
+  "description": "Multi-Agent Claude Code Terminal Suite - Orchestrate multiple Claude agents for software development and ML research",
+  "keywords": [
+    "claude",
+    "claude-code",
+    "ai",
+    "agents",
+    "multi-agent",
+    "llm",
+    "cli",
+    "terminal",
+    "developer-tools",
+    "ml",
+    "machine-learning"
+  ],
+  "author": "Aditya Katiyar",
+  "license": "MIT",
+  "homepage": "https://github.com/adityakatiyar/agentk#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adityakatiyar/agentk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/adityakatiyar/agentk/issues"
+  },
+  "bin": {
+    "agentk": "./bin/agentk-wrapper.js"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "modes/",
+    "agentk"
+  ],
+  "scripts": {
+    "postinstall": "node bin/postinstall.js",
+    "test": "echo \"Tests not implemented yet\" && exit 0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "os": [
+    "darwin",
+    "linux"
+  ],
+  "preferGlobal": true
+}

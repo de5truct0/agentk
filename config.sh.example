@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+# AGENT-K Configuration
+# Copy this file to ~/.agentk/config.sh and customize
+
+# =============================================================================
+# MODEL SETTINGS
+# =============================================================================
+
+# Claude model to use (uncomment to override default)
+# export AGENTK_MODEL="claude-3-opus-20240229"
+
+# =============================================================================
+# LOGGING
+# =============================================================================
+
+# Log level: debug, info, warn, error
+export LOG_LEVEL="info"
+
+# =============================================================================
+# DIRECTORIES
+# =============================================================================
+
+# Custom workspace location (default: ./workspace)
+# export AGENTK_WORKSPACE="$HOME/.agentk/workspace"
+
+# =============================================================================
+# AGENT SETTINGS
+# =============================================================================
+
+# Default mode: dev or ml
+export AGENTK_MODE="dev"
+
+# Timeout for agent tasks (seconds)
+export AGENTK_TASK_TIMEOUT=300
+
+# Maximum parallel agents
+export AGENTK_MAX_PARALLEL=4
+
+# =============================================================================
+# VISUAL MODE
+# =============================================================================
+
+# Auto-start visual mode
+# export AGENTK_VISUAL=true
+
+# tmux session name
+export AGENTK_TMUX_SESSION="agentk"
+
+# =============================================================================
+# SCOUT SETTINGS
+# =============================================================================
+
+# Enable/disable Scout auto-activation
+export AGENTK_SCOUT_AUTO=true
+
+# Scout search timeout (seconds)
+export AGENTK_SCOUT_TIMEOUT=30
+
+# =============================================================================
+# COST CONTROL
+# =============================================================================
+
+# Maximum cost per session (USD) - 0 for unlimited
+# export AGENTK_MAX_COST=10.00
+
+# Cost warning threshold (USD)
+# export AGENTK_COST_WARNING=5.00
+
+# =============================================================================
+# CUSTOM AGENT PROMPTS
+# =============================================================================
+
+# Override agent prompts with custom files
+# export AGENTK_CUSTOM_PROMPTS="$HOME/.agentk/prompts"
+
+# =============================================================================
+# HISTORY
+# =============================================================================
+
+# Enable command history
+export AGENTK_HISTORY=true
+
+# History file location
+export AGENTK_HISTORY_FILE="$HOME/.agentk/history"
+
+# Maximum history entries
+export AGENTK_HISTORY_SIZE=1000
