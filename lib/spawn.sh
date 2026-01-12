@@ -235,15 +235,86 @@ spawn_agent_interactive() {
 
     log_info "Starting interactive session with agent: $agent"
 
-    # Run claude interactively
+    # Run claude with JSON output to capture tokens
+    local output_file
+    output_file=$(mktemp)
+
     if [[ -n "$initial_prompt" ]]; then
-        claude --system-prompt "$prompt_file" "$initial_prompt"
+        # Run with --print to get non-interactive output with token info
+        if claude --print --output-format json --system-prompt "$prompt_file" "$initial_prompt" > "$output_file" 2>&1; then
+            # Parse and display response
+            _parse_and_display_response "$output_file"
+        else
+            # Fallback: show raw output on error
+            cat "$output_file"
+        fi
     else
+        # Interactive mode - can't easily capture tokens, run normally
         claude --system-prompt "$prompt_file"
     fi
 
     # Cleanup
-    rm -f "$prompt_file"
+    rm -f "$prompt_file" "$output_file"
+}
+
+# Parse JSON response and extract tokens
+_parse_and_display_response() {
+    local output_file="$1"
+
+    # Check if output is valid JSON
+    if jq -e . "$output_file" >/dev/null 2>&1; then
+        # Extract the response text - handle different JSON structures
+        local response
+        response=$(jq -r '
+            if .result then .result
+            elif .content then
+                if type == "array" then .[].text
+                else .content
+                end
+            elif .text then .text
+            else .
+            end
+        ' "$output_file" 2>/dev/null)
+
+        # Extract token counts - check various possible locations
+        local input_tokens output_tokens total_tokens
+        input_tokens=$(jq -r '
+            .usage.input_tokens //
+            .inputTokens //
+            .stats.input_tokens //
+            0
+        ' "$output_file" 2>/dev/null)
+        output_tokens=$(jq -r '
+            .usage.output_tokens //
+            .outputTokens //
+            .stats.output_tokens //
+            0
+        ' "$output_file" 2>/dev/null)
+
+        # Handle null values
+        [[ "$input_tokens" == "null" || -z "$input_tokens" ]] && input_tokens=0
+        [[ "$output_tokens" == "null" || -z "$output_tokens" ]] && output_tokens=0
+
+        total_tokens=$((input_tokens + output_tokens))
+
+        # Update session token count via file
+        if [[ $total_tokens -gt 0 ]] && [[ -n "${_TOKEN_FILE:-}" ]]; then
+            local current
+            current=$(cat "$_TOKEN_FILE" 2>/dev/null || echo "0")
+            echo "$((current + total_tokens))" > "$_TOKEN_FILE"
+        fi
+
+        # Display the response
+        echo "$response"
+
+        # Show token info in dim text
+        if [[ $total_tokens -gt 0 ]]; then
+            printf "\n${DIM}↑ %d tokens (in: %d, out: %d)${RESET}\n" "$total_tokens" "$input_tokens" "$output_tokens"
+        fi
+    else
+        # Not JSON, display as-is (probably an error or plain text)
+        cat "$output_file"
+    fi
 }
 
 # =============================================================================

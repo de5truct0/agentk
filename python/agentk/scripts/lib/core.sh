@@ -8,7 +8,7 @@ set -euo pipefail
 # CONSTANTS
 # =============================================================================
 
-AGENTK_VERSION="1.0.4"
+AGENTK_VERSION="1.0.5"
 AGENTK_ROOT="${AGENTK_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 AGENTK_WORKSPACE="${AGENTK_ROOT}/workspace"
 CLAUDE_KNOWLEDGE_CUTOFF="2024-04"

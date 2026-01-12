@@ -518,14 +518,36 @@ print_info() {
 # SESSION STATS & TOKEN TRACKING
 # =============================================================================
 
+# Token tracking file (persists across subshells)
+_TOKEN_FILE=""
+
 init_session_stats() {
     _SESSION_START_TIME=$(date +%s)
     _SESSION_TOKENS=0
+    # Create token tracking file (export for subshells)
+    export _TOKEN_FILE="${AGENTK_WORKSPACE:-.}/.session_tokens"
+    echo "0" > "$_TOKEN_FILE"
 }
 
 add_tokens() {
     local tokens="${1:-0}"
-    _SESSION_TOKENS=$((_SESSION_TOKENS + tokens))
+    if [[ -n "$_TOKEN_FILE" ]] && [[ -f "$_TOKEN_FILE" ]]; then
+        local current
+        current=$(cat "$_TOKEN_FILE" 2>/dev/null || echo "0")
+        local new_total=$((current + tokens))
+        echo "$new_total" > "$_TOKEN_FILE"
+        _SESSION_TOKENS=$new_total
+    else
+        _SESSION_TOKENS=$((_SESSION_TOKENS + tokens))
+    fi
+}
+
+get_session_tokens() {
+    if [[ -n "$_TOKEN_FILE" ]] && [[ -f "$_TOKEN_FILE" ]]; then
+        cat "$_TOKEN_FILE" 2>/dev/null || echo "0"
+    else
+        echo "${_SESSION_TOKENS:-0}"
+    fi
 }
 
 format_tokens() {
@@ -553,12 +575,17 @@ print_session_stats() {
         fi
     fi
 
+    local total_tokens
+    total_tokens=$(get_session_tokens)
     local tokens_display
-    tokens_display=$(format_tokens "${_SESSION_TOKENS:-0}")
+    tokens_display=$(format_tokens "$total_tokens")
 
     echo
     print_divider "─"
     printf "${DIM}Session: %s │ Tokens: ↑ %s${RESET}\n" "$elapsed" "$tokens_display"
+
+    # Cleanup token file
+    [[ -n "$_TOKEN_FILE" ]] && rm -f "$_TOKEN_FILE" 2>/dev/null
 }
 
 print_status_line() {
