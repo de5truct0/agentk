@@ -1,48 +1,51 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-import { colors, boxDouble, icons } from '../themes/retro.js';
 
 interface BannerProps {
   version: string;
 }
 
+// Sophisticated dark palette
+const theme = {
+  border: '#2d3748',      // Slate gray
+  accent: '#4fd1c5',      // Teal
+  highlight: '#81e6d9',   // Light teal
+  text: '#e2e8f0',        // Light gray
+  dim: '#4a5568',         // Medium gray
+  glow: '#319795',        // Deep teal
+};
+
 export const Banner: React.FC<BannerProps> = ({ version }) => {
   const termWidth = process.stdout.columns || 80;
-  const bannerWidth = Math.min(termWidth - 2, 50);
-  const innerWidth = bannerWidth - 2;
-
-  const title = `${icons.star}  A G E N T - K  ${icons.star}`;
-  const subtitle = 'Multi-Agent Claude Code Suite';
-  const versionText = `v${version}`;
-
-  const centerPad = (text: string, width: number): string => {
-    const pad = Math.max(0, Math.floor((width - text.length) / 2));
-    return ' '.repeat(pad) + text + ' '.repeat(width - pad - text.length);
-  };
+  const w = termWidth;
 
   return (
     <Box flexDirection="column" marginBottom={1}>
-      <Text color={colors.secondary}>
-        {boxDouble.topLeft}{boxDouble.horizontal.repeat(innerWidth)}{boxDouble.topRight}
-      </Text>
-      <Text color={colors.secondary}>
-        {boxDouble.vertical}
-        <Text bold color={colors.primary}>{centerPad(title, innerWidth)}</Text>
-        {boxDouble.vertical}
-      </Text>
-      <Text color={colors.secondary}>
-        {boxDouble.vertical}
-        <Text dimColor>{centerPad(subtitle, innerWidth)}</Text>
-        {boxDouble.vertical}
-      </Text>
-      <Text color={colors.secondary}>
-        {boxDouble.vertical}
-        <Text dimColor>{centerPad(versionText, innerWidth)}</Text>
-        {boxDouble.vertical}
-      </Text>
-      <Text color={colors.secondary}>
-        {boxDouble.bottomLeft}{boxDouble.horizontal.repeat(innerWidth)}{boxDouble.bottomRight}
-      </Text>
+      {/* Minimal top accent */}
+      <Box>
+        <Text color={theme.glow}>{'▁'.repeat(w)}</Text>
+      </Box>
+
+      {/* Main content area */}
+      <Box>
+        <Text color={theme.border}>{'  '}</Text>
+        <Text color={theme.dim}>{'◇'}</Text>
+        <Text color={theme.border}>{' ─── '}</Text>
+        <Text color={theme.highlight} bold>AGENT</Text>
+        <Text color={theme.accent} bold>-</Text>
+        <Text color={theme.highlight} bold>K</Text>
+        <Text color={theme.border}>{' ─── '}</Text>
+        <Text color={theme.dim}>{'◇'}</Text>
+        <Text color={theme.border}>{' ─ '}</Text>
+        <Text color={theme.dim} italic>Multi-Agent Intelligence System</Text>
+        <Text color={theme.border}>{' ─'.repeat(Math.max(1, Math.floor((w - 58) / 2)))}</Text>
+        <Text color={theme.dim}> v{version}</Text>
+      </Box>
+
+      {/* Subtle bottom line */}
+      <Box>
+        <Text color={theme.border}>{'─'.repeat(w)}</Text>
+      </Box>
     </Box>
   );
 };

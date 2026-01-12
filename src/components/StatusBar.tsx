@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Text } from 'ink';
-import { colors, icons, box } from '../themes/retro.js';
+import { icons } from '../themes/retro.js';
 
 interface StatusBarProps {
   mode: 'dev' | 'ml';
@@ -8,6 +8,15 @@ interface StatusBarProps {
   startTime: Date;
   isProcessing?: boolean;
 }
+
+// Matching sophisticated theme
+const theme = {
+  border: '#2d3748',
+  accent: '#4fd1c5',
+  highlight: '#81e6d9',
+  dim: '#4a5568',
+  glow: '#319795',
+};
 
 export const StatusBar: React.FC<StatusBarProps> = ({
   mode,
@@ -18,7 +27,6 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   const [elapsed, setElapsed] = useState('0s');
   const [spinnerFrame, setSpinnerFrame] = useState(0);
 
-  // Update elapsed time every second
   useEffect(() => {
     const interval = setInterval(() => {
       const secs = Math.floor((Date.now() - startTime.getTime()) / 1000);
@@ -29,7 +37,6 @@ export const StatusBar: React.FC<StatusBarProps> = ({
     return () => clearInterval(interval);
   }, [startTime]);
 
-  // Spinner animation
   useEffect(() => {
     if (!isProcessing) return;
     const interval = setInterval(() => {
@@ -44,30 +51,31 @@ export const StatusBar: React.FC<StatusBarProps> = ({
     return t.toString();
   };
 
-  const modeIcon = mode === 'dev' ? icons.lightning : icons.brain;
-  const modeLabel = mode === 'dev' ? 'Development' : 'ML Research';
-
+  const modeLabel = mode === 'dev' ? 'DEV' : 'ML';
   const termWidth = process.stdout.columns || 80;
-  const barWidth = Math.min(termWidth - 2, 78);
 
   return (
     <Box flexDirection="column">
-      <Text color={colors.dim}>
-        {box.horizontal.repeat(barWidth)}
-      </Text>
-      <Box justifyContent="space-between" width={barWidth}>
-        <Text>
-          <Text color={colors.secondary}>{modeIcon} {modeLabel}</Text>
-          <Text dimColor> │ </Text>
-          <Text dimColor>/help for commands</Text>
-        </Text>
-        <Text>
+      <Text color={theme.border}>{'─'.repeat(termWidth)}</Text>
+      <Box justifyContent="space-between" width={termWidth}>
+        <Box>
+          <Text color={theme.dim}>{'  ◇ '}</Text>
+          <Text color={theme.accent}>{modeLabel}</Text>
+          <Text color={theme.border}>{' │ '}</Text>
+          <Text color={theme.dim}>/help</Text>
           {isProcessing && (
-            <Text color={colors.warning}>{icons.spinner[spinnerFrame]} </Text>
+            <>
+              <Text color={theme.border}>{' │ '}</Text>
+              <Text color={theme.highlight}>{icons.spinner[spinnerFrame]}</Text>
+            </>
           )}
-          <Text dimColor>{elapsed} │ </Text>
-          <Text color={colors.primary}>↑ {formatTokens(tokens)} tokens</Text>
-        </Text>
+        </Box>
+        <Box>
+          <Text color={theme.dim}>{elapsed}</Text>
+          <Text color={theme.border}>{' │ '}</Text>
+          <Text color={theme.accent}>↑ {formatTokens(tokens)}</Text>
+          <Text color={theme.dim}>{' tokens  '}</Text>
+        </Box>
       </Box>
     </Box>
   );

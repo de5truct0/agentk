@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Text, useApp, useInput } from 'ink';
+import React, { useState } from 'react';
+import { Box, Text, useApp, useInput, Static } from 'ink';
 import { Banner } from './Banner.js';
 import { ChatMessage } from './ChatMessage.js';
 import { Input } from './Input.js';
 import { StatusBar } from './StatusBar.js';
+import { ThinkingIndicator } from './ThinkingIndicator.js';
 import { runClaude } from '../lib/claude.js';
-import { colors, icons } from '../themes/retro.js';
 
 interface Message {
   id: string;
@@ -25,6 +25,7 @@ export const App: React.FC<AppProps> = ({ mode, version }) => {
   const { exit } = useApp();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [processingStartTime, setProcessingStartTime] = useState<Date | null>(null);
   const [totalTokens, setTotalTokens] = useState(0);
   const [startTime] = useState(new Date());
   const [error, setError] = useState<string | null>(null);
@@ -46,6 +47,7 @@ export const App: React.FC<AppProps> = ({ mode, version }) => {
     };
     setMessages(prev => [...prev, userMessage]);
     setIsProcessing(true);
+    setProcessingStartTime(new Date());
     setError(null);
 
     try {
@@ -71,12 +73,13 @@ export const App: React.FC<AppProps> = ({ mode, version }) => {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setIsProcessing(false);
+      setProcessingStartTime(null);
     }
   };
 
   // Handle slash commands
   const handleCommand = (cmd: string) => {
-    const [command, ...args] = cmd.slice(1).split(' ');
+    const [command] = cmd.slice(1).split(' ');
 
     switch (command) {
       case 'exit':
@@ -94,12 +97,14 @@ export const App: React.FC<AppProps> = ({ mode, version }) => {
           content: `Available commands:
 /help     - Show this help
 /clear    - Clear chat history
-/status   - Show agent status
+/status   - Show session status
 /exit     - Exit AGENT-K
 
 Keyboard shortcuts:
+↑/↓       - Browse command history
 Ctrl+C    - Exit
-Ctrl+U    - Clear input line`,
+Ctrl+U    - Clear input line
+Ctrl+A/E  - Jump to start/end`,
           timestamp: new Date(),
         };
         setMessages(prev => [...prev, helpMessage]);
@@ -110,10 +115,10 @@ Ctrl+U    - Clear input line`,
           role: 'agent',
           agentName: 'System',
           content: `Session Status:
-${icons.bullet} Mode: ${mode === 'dev' ? 'Development' : 'ML Research'}
-${icons.bullet} Messages: ${messages.length}
-${icons.bullet} Total Tokens: ${totalTokens}
-${icons.bullet} Session Time: ${formatElapsed(startTime)}`,
+◇ Mode: ${mode === 'dev' ? 'Development' : 'ML Research'}
+◇ Messages: ${messages.length}
+◇ Total Tokens: ${totalTokens}
+◇ Session Time: ${formatElapsed(startTime)}`,
           timestamp: new Date(),
         };
         setMessages(prev => [...prev, statusMessage]);
@@ -131,12 +136,13 @@ ${icons.bullet} Session Time: ${formatElapsed(startTime)}`,
   });
 
   return (
-    <Box flexDirection="column" padding={1}>
+    <Box flexDirection="column">
+      {/* Banner - rendered once at top */}
       <Banner version={version} />
 
-      {/* Chat messages */}
-      <Box flexDirection="column" flexGrow={1}>
-        {messages.map(msg => (
+      {/* Static chat history - won't re-render/scroll */}
+      <Static items={messages}>
+        {(msg) => (
           <ChatMessage
             key={msg.id}
             role={msg.role}
@@ -144,26 +150,22 @@ ${icons.bullet} Session Time: ${formatElapsed(startTime)}`,
             content={msg.content}
             tokens={msg.tokens}
           />
-        ))}
-
-        {/* Processing indicator */}
-        {isProcessing && (
-          <Box marginY={1}>
-            <Text color={colors.warning}>
-              {icons.sparkle} Orchestrator is thinking...
-            </Text>
-          </Box>
         )}
+      </Static>
 
-        {/* Error display */}
-        {error && (
-          <Box marginY={1}>
-            <Text color={colors.error}>
-              {icons.cross} Error: {error}
-            </Text>
-          </Box>
-        )}
-      </Box>
+      {/* Processing indicator */}
+      {isProcessing && processingStartTime && (
+        <ThinkingIndicator startTime={processingStartTime} />
+      )}
+
+      {/* Error display */}
+      {error && (
+        <Box marginY={1} marginLeft={1}>
+          <Text color="#e53e3e">
+            ✗ Error: {error}
+          </Text>
+        </Box>
+      )}
 
       {/* Input */}
       <Input

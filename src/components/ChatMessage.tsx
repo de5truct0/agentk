@@ -1,6 +1,5 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-import { box, colors, icons } from '../themes/retro.js';
 
 interface ChatMessageProps {
   role: 'user' | 'agent';
@@ -10,61 +9,59 @@ interface ChatMessageProps {
   timestamp?: Date;
 }
 
+// Sophisticated theme
+const theme = {
+  border: '#2d3748',
+  accent: '#4fd1c5',
+  highlight: '#81e6d9',
+  text: '#e2e8f0',
+  dim: '#4a5568',
+  user: '#9f7aea',      // Purple for user
+  agent: '#4fd1c5',     // Teal for agent
+};
+
 export const ChatMessage: React.FC<ChatMessageProps> = ({
   role,
   agentName = 'Agent',
   content,
   tokens,
-  timestamp,
 }) => {
   const isUser = role === 'user';
-  const color = isUser ? colors.primary : colors.secondary;
+  const symbolColor = isUser ? theme.user : theme.agent;
   const title = isUser ? 'You' : agentName;
 
   const termWidth = process.stdout.columns || 80;
-  const boxWidth = Math.min(termWidth - 2, 78);
-  const contentWidth = boxWidth - 4;
+  const contentWidth = termWidth - 6;
 
-  // Word wrap content
   const lines = wrapText(content, contentWidth);
 
-  const titleText = ` ${title} `;
-  const topLineWidth = boxWidth - 2 - titleText.length;
-
   return (
-    <Box flexDirection="column" marginY={1}>
-      {/* Top border with title */}
-      <Text color={color}>
-        {box.topLeft}{box.horizontal}
-        <Text bold>{titleText}</Text>
-        {box.horizontal.repeat(Math.max(0, topLineWidth))}
-        {box.topRight}
-      </Text>
+    <Box flexDirection="column" marginY={1} marginLeft={1}>
+      {/* Symbol and title */}
+      <Box>
+        <Text color={symbolColor}>{'◆ '}</Text>
+        <Text color={symbolColor} bold>{title}</Text>
+      </Box>
 
-      {/* Content lines */}
-      {lines.map((line, i) => (
-        <Text key={i} color={color}>
-          {box.vertical} <Text color="white">{line.padEnd(contentWidth)}</Text> {box.vertical}
-        </Text>
-      ))}
+      {/* Content */}
+      <Box flexDirection="column" marginLeft={2}>
+        {lines.map((line, i) => (
+          <Text key={i} color={theme.text}>{line}</Text>
+        ))}
+      </Box>
 
-      {/* Token info for agent messages */}
+      {/* Token info */}
       {tokens && tokens.input + tokens.output > 0 && (
-        <Text color={color}>
-          {box.vertical} <Text dimColor>{icons.arrow} {tokens.input + tokens.output} tokens (in: {tokens.input}, out: {tokens.output})</Text>
-          {' '.repeat(Math.max(0, contentWidth - 40))} {box.vertical}
-        </Text>
+        <Box marginLeft={2}>
+          <Text color={theme.dim}>
+            → {tokens.input + tokens.output} tokens
+          </Text>
+        </Box>
       )}
-
-      {/* Bottom border */}
-      <Text color={color}>
-        {box.bottomLeft}{box.horizontal.repeat(boxWidth - 2)}{box.bottomRight}
-      </Text>
     </Box>
   );
 };
 
-// Simple word wrap function
 function wrapText(text: string, width: number): string[] {
   const lines: string[] = [];
   const paragraphs = text.split('\n');

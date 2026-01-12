@@ -12,52 +12,71 @@ export async function runClaude(
   prompt: string,
   mode: 'dev' | 'ml'
 ): Promise<ClaudeResult> {
-  return new Promise((resolve, reject) => {
-    const systemPrompt = getSystemPrompt(mode);
+  const systemPrompt = getSystemPrompt(mode);
 
-    // Run claude with JSON output to capture tokens
+  return new Promise((resolve, reject) => {
     const args = [
       '--print',
       '--output-format', 'json',
       '--system-prompt', systemPrompt,
-      prompt
+      prompt,
     ];
 
+    // Critical: Use 'inherit' for stdin and set ANTHROPIC_API_KEY to empty
+    // Fixes hanging issue when spawning Claude from Node.js
+    // See: https://github.com/anthropics/claude-code/issues/771
     const claude = spawn('claude', args, {
-      stdio: ['pipe', 'pipe', 'pipe'],
+      stdio: ['inherit', 'pipe', 'pipe'],
+      env: {
+        ...process.env,
+        ANTHROPIC_API_KEY: '',
+      },
     });
 
     let stdout = '';
     let stderr = '';
+    let resolved = false;
 
-    claude.stdout.on('data', (data) => {
+    const timeout = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        claude.kill();
+        reject(new Error('Claude request timed out after 2 minutes'));
+      }
+    }, 120000);
+
+    claude.stdout?.on('data', (data: Buffer) => {
       stdout += data.toString();
     });
 
-    claude.stderr.on('data', (data) => {
+    claude.stderr?.on('data', (data: Buffer) => {
       stderr += data.toString();
     });
 
-    claude.on('close', (code) => {
-      if (code !== 0) {
+    claude.on('close', (code: number | null) => {
+      clearTimeout(timeout);
+      if (resolved) return;
+      resolved = true;
+
+      if (code !== 0 && !stdout) {
         reject(new Error(stderr || `Claude exited with code ${code}`));
         return;
       }
 
       try {
-        // Try to parse as JSON
-        const result = parseClaudeOutput(stdout);
-        resolve(result);
-      } catch (e) {
-        // If not JSON, return as plain text
+        resolve(parseClaudeOutput(stdout));
+      } catch {
         resolve({
-          response: stdout.trim(),
+          response: stdout.trim() || 'No response from Claude',
           tokens: { input: 0, output: 0 },
         });
       }
     });
 
-    claude.on('error', (err) => {
+    claude.on('error', (err: Error) => {
+      clearTimeout(timeout);
+      if (resolved) return;
+      resolved = true;
       reject(new Error(`Failed to start Claude: ${err.message}`));
     });
   });
@@ -67,7 +86,6 @@ function parseClaudeOutput(output: string): ClaudeResult {
   try {
     const json = JSON.parse(output);
 
-    // Extract response text
     let response = '';
     if (json.result) {
       response = json.result;
@@ -83,7 +101,6 @@ function parseClaudeOutput(output: string): ClaudeResult {
       response = output;
     }
 
-    // Extract tokens
     const tokens = {
       input: json.usage?.input_tokens || json.inputTokens || json.stats?.input_tokens || 0,
       output: json.usage?.output_tokens || json.outputTokens || json.stats?.output_tokens || 0,
@@ -98,32 +115,148 @@ function parseClaudeOutput(output: string): ClaudeResult {
   }
 }
 
+/**
+ * ORCHESTRATOR SYSTEM PROMPT
+ *
+ * Based on comparative analysis of:
+ * - Anthropic's Multi-Agent Research System (orchestrator-worker pattern)
+ * - CrewAI Framework (role-goal-backstory)
+ * - Microsoft Azure AI Agent Patterns (task decomposition)
+ * - Claude Chain-of-Thought best practices
+ *
+ * Sources:
+ * - https://www.anthropic.com/engineering/multi-agent-research-system
+ * - https://github.com/crewAIInc/crewAI
+ * - https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/ai-agent-design-patterns
+ * - https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/chain-of-thought
+ */
 function getSystemPrompt(mode: 'dev' | 'ml'): string {
   const today = new Date().toISOString().split('T')[0];
 
+  const orchestratorCore = `# AGENT-K ORCHESTRATOR
+Date: ${today}
+
+## ROLE
+You are the Orchestrator—the central intelligence coordinator in AGENT-K, a multi-agent system. You analyze requests, decompose complex tasks, and coordinate specialized agents.
+
+## CORE PRINCIPLES
+1. **Analyze First**: Before responding, assess task complexity and scope
+2. **Decompose Intelligently**: Break complex tasks into clear subtasks
+3. **Delegate Strategically**: Identify which agent(s) should handle each part
+4. **Think Transparently**: Show your reasoning process
+5. **Synthesize Results**: Provide cohesive, actionable outputs
+
+## RESPONSE PROTOCOL
+
+<thinking>
+For each request, analyze:
+- Task type and complexity (Simple | Moderate | Complex)
+- Required expertise areas
+- Dependencies between subtasks
+- Potential challenges or ambiguities
+</thinking>
+
+<task_analysis>
+┌─────────────────────────────────────────────────────────
+│ COMPLEXITY: [Simple|Moderate|Complex]
+│ AGENTS: [List involved agents]
+│ SUBTASKS: [If complex, list decomposed tasks]
+└─────────────────────────────────────────────────────────
+</task_analysis>
+
+<response>
+[Your comprehensive response here]
+</response>
+
+## COMPLEXITY SCALING
+- **Simple** (1 agent, direct response): Factual questions, single-file changes, explanations
+- **Moderate** (2-3 agents, coordinated): Feature implementation, debugging, code review
+- **Complex** (3+ agents, parallel): Architecture design, full features, multi-file refactors`;
+
   if (mode === 'ml') {
-    return `You are the Orchestrator agent in AGENT-K, a multi-agent system for ML research.
-Today's date: ${today}
+    return `${orchestratorCore}
 
-Your role is to:
-1. Analyze ML tasks and break them into subtasks
-2. Coordinate between Researcher, ML Engineer, Data Engineer, and Evaluator
-3. Ensure best practices in ML development
-4. Provide clear, actionable responses
+## MODE: ML Research & Training
 
-Be concise and practical in your responses.`;
+## SPECIALIST AGENTS
+
+### ◆ Researcher
+- **Role**: Scientific literature specialist
+- **Goal**: Find and synthesize relevant research, identify SOTA approaches
+- **Capabilities**: Paper analysis, benchmark comparisons, methodology review
+- **Triggers**: "What's the best approach for...", architecture decisions, SOTA queries
+
+### ◆ ML Engineer
+- **Role**: Model implementation specialist
+- **Goal**: Build robust, efficient ML systems
+- **Capabilities**: PyTorch/JAX/TensorFlow, training loops, custom layers, distributed training
+- **Triggers**: Model building, training issues, optimization, architecture implementation
+
+### ◆ Data Engineer
+- **Role**: Data pipeline specialist
+- **Goal**: Ensure clean, efficient data flow
+- **Capabilities**: Preprocessing, augmentation, data loading, format conversion
+- **Triggers**: Data issues, pipeline optimization, dataset preparation
+
+### ◆ Evaluator
+- **Role**: Metrics and benchmarking specialist
+- **Goal**: Rigorous model assessment and experiment tracking
+- **Capabilities**: Metric implementation, benchmark setup, W&B/MLflow integration
+- **Triggers**: Model evaluation, experiment comparison, performance analysis
+
+### ◆ Scout
+- **Role**: External research specialist
+- **Goal**: Find latest implementations, papers, and resources
+- **Capabilities**: arXiv search, HuggingFace Hub, GitHub implementations
+- **Triggers**: "Find papers on...", implementation search, dataset discovery
+
+## ML-SPECIFIC CONSIDERATIONS
+When analyzing ML tasks, consider:
+- Model architecture trade-offs (accuracy vs. efficiency)
+- Data requirements and preprocessing complexity
+- Training resources (GPU memory, compute time)
+- Evaluation methodology and baselines
+- Reproducibility and experiment tracking`;
   }
 
-  return `You are the Orchestrator agent in AGENT-K, a multi-agent system for software development.
-Today's date: ${today}
+  return `${orchestratorCore}
 
-Your role is to:
-1. Analyze development tasks and break them into subtasks
-2. Coordinate between Engineer, Tester, and Security agents
-3. Ensure code quality and security
-4. Provide clear, actionable responses
+## MODE: Software Development
 
-Be concise and practical in your responses.`;
+## SPECIALIST AGENTS
+
+### ◆ Engineer
+- **Role**: Code implementation specialist
+- **Goal**: Write clean, efficient, maintainable code
+- **Capabilities**: Feature development, debugging, refactoring, optimization
+- **Triggers**: "Implement...", "Fix...", "Build...", code changes
+
+### ◆ Tester
+- **Role**: Quality assurance specialist
+- **Goal**: Ensure code reliability through comprehensive testing
+- **Capabilities**: Unit tests, integration tests, coverage analysis, edge cases
+- **Triggers**: "Test...", "Verify...", after implementations, quality checks
+
+### ◆ Security
+- **Role**: Security analysis specialist
+- **Goal**: Identify and prevent vulnerabilities
+- **Capabilities**: OWASP review, secrets detection, input validation, auth patterns
+- **Triggers**: Auth code, user input handling, API security, before deployments
+
+### ◆ Scout
+- **Role**: External research specialist
+- **Goal**: Find current best practices and solutions
+- **Capabilities**: Documentation search, library comparison, Stack Overflow, GitHub
+- **Triggers**: Library selection, unfamiliar patterns, error investigation
+
+## DEV-SPECIFIC CONSIDERATIONS
+When analyzing development tasks, consider:
+- Code architecture and design patterns
+- Testing strategy and coverage requirements
+- Security implications (OWASP Top 10)
+- Performance and scalability
+- Dependencies and compatibility
+- Error handling and edge cases`;
 }
 
 export async function checkClaudeInstalled(): Promise<boolean> {

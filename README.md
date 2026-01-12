@@ -3,92 +3,28 @@
 **Multi-Agent Claude Code Terminal Suite**
 
 ```
-╭─────────────────────────────────────────────────────────────────────────────────╮
-│                              AGENT-K v1.0                                       │
-╰─────────────────────────────────────────────────────────────────────────────────╯
+▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+  ◇ ─── AGENT-K ─── ◇ ─ Multi-Agent Intelligence System ─────────────── v2.0.0
+─────────────────────────────────────────────────────────────────────────────────
 ```
 
-Transform your terminal into a team of specialized AI agents. AGENT-K orchestrates multiple Claude instances working in parallel on your software development and ML research tasks.
-
-## What is AGENT-K?
-
-AGENT-K extends Claude Code with **multi-agent orchestration**. Instead of a single AI assistant, you get a coordinated team of specialists - each with domain expertise, working together on complex tasks.
-
-```
-╭─ You ────────────────────────────────────────────────────────────────────────────╮
-│ Build a secure REST API with user authentication                                 │
-╰──────────────────────────────────────────────────────────────────────────────────╯
-
-╭─ Orchestrator ───────────────────────────────────────────────────────────────────╮
-│ Breaking down task...                                                            │
-│   → Engineer: Implement REST endpoints and JWT authentication                    │
-│   → Tester: Write API integration tests                                          │
-│   → Security: Review for OWASP vulnerabilities                                   │
-│   → Scout: Find latest best practices for JWT in 2025                            │
-╰──────────────────────────────────────────────────────────────────────────────────╯
-
-[●] Orchestrator   Coordinating
-[◐] Engineer       Writing src/api/auth.py...
-[◐] Scout          Searching for JWT best practices...
-[ ] Tester         Waiting for implementation
-[ ] Security       Queued for review
-```
-
-## Why AGENT-K?
-
-### The Problem
-
-Claude is brilliant, but complex tasks often require:
-- **Multiple perspectives** (implementation, testing, security)
-- **Parallel work** (why write tests sequentially after code?)
-- **Up-to-date information** (Claude's training data becomes stale)
-- **Specialized focus** (security reviews need different prompts than coding)
-
-### The Solution
-
-AGENT-K spawns specialized Claude agents that:
-- **Work in parallel** on different aspects of your task
-- **Coordinate automatically** through a central orchestrator
-- **Stay current** with a dedicated Scout agent for real-time research
-- **Follow best practices** with domain-specific system prompts
+A sophisticated terminal UI for orchestrating Claude AI agents. Built with React + Ink, featuring a beautiful dark theme and intelligent task analysis.
 
 ## Features
 
-| Feature | Description |
-|---------|-------------|
-| **Multi-Agent Orchestration** | Coordinate 5-6 specialized agents working in parallel |
-| **Two Modes** | Software Development (default) and ML Research & Training |
-| **Interactive Chat** | Familiar interface like `claude` but with a whole team |
-| **Visual Mode** | tmux-based multi-pane view of all agents working |
-| **Scout Agent** | Real-time web/GitHub/paper search to stay current |
-| **Date Awareness** | Agents know when to verify potentially outdated info |
-| **Focus Mode** | Talk directly to any specialist agent |
-| **File-Based IPC** | Agents coordinate through structured JSON messages |
-
-## Agent Teams
-
-### Development Mode (Default)
-
-| Agent | Specialty |
-|-------|-----------|
-| **Orchestrator** | Task decomposition, coordination, result aggregation |
-| **Engineer** | Code implementation, debugging, refactoring |
-| **Tester** | Unit/integration tests, coverage analysis |
-| **Security** | OWASP vulnerability review, secrets detection |
-| **Scout** | Real-time search for current best practices |
-
-### ML Mode (`--mode ml`)
-
-| Agent | Specialty |
-|-------|-----------|
-| **Orchestrator** | ML project lifecycle management |
-| **Researcher** | Literature review, SOTA analysis, paper summaries |
-| **ML Engineer** | Model implementation, training loops, optimization |
-| **Data Engineer** | Data pipelines, preprocessing, augmentation |
-| **Evaluator** | Metrics, benchmarking, experiment tracking |
-| **Scout** | arXiv, HuggingFace, Papers With Code search |
+- **Sophisticated UI** - Dark teal/purple theme inspired by modern terminal aesthetics
+- **Intelligent Orchestrator** - Analyzes task complexity and coordinates specialist agents
+- **Command History** - Use ↑/↓ arrows to browse past messages
+- **Live Token Tracking** - Real-time token usage display
+- **Animated Thinking Indicator** - Beautiful spinner with elapsed time
+- **Two Modes** - Development and ML Research
 
 ## Installation
+
+### npm (Recommended)
+```bash
+npm install -g agentk8
+```
 
 ### Homebrew (macOS/Linux)
 ```bash
@@ -96,238 +32,154 @@ brew tap de5truct0/agentk
 brew install agentk8
 ```
 
-### npm
-```bash
-npm install -g agentk8
-```
-
-### pip
-```bash
-pip install agentk8
-```
-
-### Quick Install Script
-```bash
-curl -sSL https://raw.githubusercontent.com/de5truct0/agentk/main/install.sh | bash
-```
-
 ### From Source
 ```bash
 git clone https://github.com/de5truct0/agentk.git
 cd agentk
-make install
+npm install
+npm run build
+npm link
 ```
-
-> **Note**: Package name is `agentk8` on all registries. The installed command is `agentk`.
 
 ## Requirements
 
-- **jq** - JSON processing (`brew install jq`)
-- **claude** - Claude Code CLI ([Install here](https://claude.ai/code))
-- **tmux** - Optional, for visual mode (`brew install tmux`)
+- **Node.js** 18+
+- **Claude Code CLI** - [Install from claude.ai/code](https://claude.ai/code)
 
 ## Quick Start
 
 ```bash
-# Start interactive session
+# Start interactive session (Development mode)
 agentk
 
-# Start ML research mode
+# Start ML Research mode
 agentk --mode ml
 
-# Start with visual panels (requires tmux)
-agentk --visual
-
-# One-shot task
-agentk -c "Refactor the user service to use async/await"
+# Show help
+agentk --help
 ```
 
 ## Usage
 
-### Interactive Session
+### Chat Interface
 
-```bash
-$ agentk
+```
+◆ You
+  Build a REST API with authentication
 
-╭─────────────────────────────────────────────────╮
-│  AGENT-K v1.0                                   │
-╰─────────────────────────────────────────────────╯
-Mode: Software Development Mode
+⣾ Synthesizing… (ctrl+c to interrupt · 12s · thinking)
 
-Type your request or /help for commands.
+◆ Orchestrator
+  <task_analysis>
+  ┌─────────────────────────────────────────────────────────
+  │ COMPLEXITY: Moderate
+  │ AGENTS: Engineer, Security, Tester
+  │ SUBTASKS: API endpoints, JWT auth, tests, security review
+  └─────────────────────────────────────────────────────────
+  </task_analysis>
 
-╭─ You ─────────────────────────────────────────────────
-│
+  [Detailed response...]
+  → 1,247 tokens
 ```
 
-### Session Commands
+### Commands
 
 | Command | Description |
 |---------|-------------|
-| `/status` | Show all agent states and current tasks |
-| `/logs <agent>` | View agent output |
-| `/kill <agent\|all>` | Stop agent(s) |
-| `/focus <agent>` | Talk directly to one agent |
-| `/unfocus` | Return to orchestrator |
-| `/visual` | Toggle tmux panel view |
-| `/clear` | Clear screen |
-| `/help` | Show all commands |
-| `/exit` | End session |
+| `/help` | Show available commands |
+| `/clear` | Clear chat history |
+| `/status` | Show session status |
+| `/exit` | Exit AGENT-K |
 
-### Scout Commands (Both Modes)
+### Keyboard Shortcuts
 
-| Command | Description |
-|---------|-------------|
-| `/search <query>` | Web search for latest info |
-| `/github <query>` | Search GitHub repos and code |
-| `/papers <topic>` | Search arXiv/Semantic Scholar |
-| `/libs <task>` | Find best libraries for task |
-| `/sota <topic>` | Get state-of-the-art approaches |
+| Key | Action |
+|-----|--------|
+| `↑` / `↓` | Browse command history |
+| `Ctrl+C` | Exit |
+| `Ctrl+U` | Clear input line |
+| `Ctrl+A` | Jump to start of line |
+| `Ctrl+E` | Jump to end of line |
 
-### ML-Specific Commands
+## Agent Teams
 
-| Command | Description |
-|---------|-------------|
-| `/experiment <name>` | Start a new experiment |
-| `/metrics` | Show current training metrics |
-| `/tensorboard` | Open TensorBoard |
-| `/checkpoint` | Save model state |
-| `/compare <e1> <e2>` | Compare experiments |
-| `/huggingface <query>` | Search HuggingFace Hub |
+### Development Mode (Default)
 
-## Visual Mode
+| Agent | Role |
+|-------|------|
+| **Orchestrator** | Task decomposition, coordination |
+| **Engineer** | Code implementation, debugging |
+| **Tester** | Unit/integration tests, coverage |
+| **Security** | OWASP review, vulnerability detection |
+| **Scout** | Real-time research, best practices |
 
-Launch with `--visual` to see all agents in a tmux layout:
+### ML Mode (`--mode ml`)
 
-```
-┌───────────────────┬───────────────────┬───────────────────┐
-│   ORCHESTRATOR    │     ENGINEER      │      TESTER       │
-│                   │                   │                   │
-│ Breaking down     │ Implementing      │ Waiting for       │
-│ task into         │ auth module...    │ implementation... │
-│ subtasks...       │                   │                   │
-├───────────────────┼───────────────────┼───────────────────┤
-│     SECURITY      │      SCOUT        │      [MAIN]       │
-│                   │                   │                   │
-│ Queued for        │ Searching JWT     │ You: _            │
-│ review            │ best practices... │                   │
-│                   │                   │                   │
-└───────────────────┴───────────────────┴───────────────────┘
-```
+| Agent | Role |
+|-------|------|
+| **Orchestrator** | ML project lifecycle coordination |
+| **Researcher** | Literature review, SOTA analysis |
+| **ML Engineer** | Model implementation, training |
+| **Data Engineer** | Data pipelines, preprocessing |
+| **Evaluator** | Metrics, benchmarking, experiments |
+| **Scout** | arXiv, HuggingFace, Papers With Code |
 
-## How It Works
+## Orchestrator Intelligence
 
-```
-                          ┌─────────────┐
-                          │    User     │
-                          └──────┬──────┘
-                                 │
-                                 ▼
-                    ┌────────────────────────┐
-                    │     Orchestrator       │
-                    │  (task decomposition)  │
-                    └───────────┬────────────┘
-                                │
-           ┌────────────────────┼────────────────────┐
-           │                    │                    │
-           ▼                    ▼                    ▼
-   ┌───────────────┐   ┌───────────────┐   ┌───────────────┐
-   │   Engineer    │   │    Tester     │   │   Security    │
-   │ (implements)  │   │  (validates)  │   │  (reviews)    │
-   └───────┬───────┘   └───────┬───────┘   └───────┬───────┘
-           │                    │                    │
-           └────────────────────┴────────────────────┘
-                                │
-                                ▼
-                    ┌────────────────────────┐
-                    │    File-Based IPC      │
-                    │ workspace/tasks/*.json │
-                    └────────────────────────┘
-```
+The Orchestrator uses a sophisticated prompt based on:
 
-1. **You enter a request** in the interactive session
-2. **Orchestrator analyzes** and breaks it into subtasks
-3. **Specialist agents spawn** as parallel Claude subprocesses
-4. Agents work **on your actual project files**
-5. **Results aggregate** back through the orchestrator
-6. You see the **combined output** with full context
+- [Anthropic's Multi-Agent Research System](https://www.anthropic.com/engineering/multi-agent-research-system) - Orchestrator-worker pattern
+- [CrewAI Framework](https://github.com/crewAIInc/crewAI) - Role-Goal-Backstory agents
+- [Claude 2026 Best Practices](https://promptbuilder.cc/blog/claude-prompt-engineering-best-practices-2026) - Contract-style prompts
+- [Microsoft Azure AI Patterns](https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/ai-agent-design-patterns) - Task decomposition
 
-## Configuration
+Every response includes:
+1. **Task Analysis** - Complexity assessment and agent identification
+2. **Structured Thinking** - Transparent reasoning process
+3. **Coordinated Response** - Synthesized output from relevant agents
 
-Create `~/.agentk/config.sh`:
+## Tech Stack
 
-```bash
-# Custom model (default: claude-3-sonnet)
-export AGENTK_MODEL="claude-3-opus-20240229"
-
-# Log level: debug, info, warn, error
-export LOG_LEVEL="info"
-
-# Custom workspace location
-export AGENTK_WORKSPACE="/custom/path/workspace"
-
-# Parallel agent limit (default: 4)
-export AGENTK_MAX_PARALLEL=6
-```
+- **React** + **Ink** - Terminal UI framework (same as Claude Code)
+- **TypeScript** - Type-safe codebase
+- **Meow** - CLI argument parsing
+- **Claude Code CLI** - AI backend
 
 ## Project Structure
 
 ```
 agentk/
-├── agentk                # Main CLI entry point
-├── lib/
-│   ├── core.sh          # Core utilities, logging, date context
-│   ├── ui.sh            # Terminal UI, spinners, chat boundaries
-│   ├── ipc.sh           # Inter-process communication
-│   ├── spawn.sh         # Agent subprocess management
-│   └── visual.sh        # tmux integration
-├── modes/
-│   ├── shared/
-│   │   └── scout.md     # Scout agent system prompt
-│   ├── dev/             # Development mode prompts
-│   │   ├── orchestrator.md
-│   │   ├── engineer.md
-│   │   ├── tester.md
-│   │   └── security.md
-│   └── ml/              # ML mode prompts
-│       ├── orchestrator.md
-│       ├── researcher.md
-│       ├── ml-engineer.md
-│       ├── data-engineer.md
-│       └── evaluator.md
-└── workspace/           # Runtime data (gitignored)
-    ├── tasks/           # Task queue (JSON)
-    ├── results/         # Agent outputs
-    ├── logs/            # Agent logs
-    └── experiments/     # ML experiment tracking
+├── src/
+│   ├── cli.tsx              # CLI entry point
+│   ├── components/
+│   │   ├── App.tsx          # Main application
+│   │   ├── Banner.tsx       # Header banner
+│   │   ├── ChatMessage.tsx  # Message display
+│   │   ├── Input.tsx        # Input with history
+│   │   ├── StatusBar.tsx    # Footer status
+│   │   └── ThinkingIndicator.tsx
+│   ├── lib/
+│   │   └── claude.ts        # Claude CLI integration
+│   └── themes/
+│       └── retro.ts         # Color theme
+├── dist/                    # Compiled output
+└── package.json
 ```
 
-## Known Limitations
+## Configuration
 
-| Limitation | Workaround |
-|------------|------------|
-| File conflicts when agents edit same file | Use `/focus` to serialize work on critical files |
-| Each agent = separate API call (cost) | Use orchestrator's judgment on when to parallelize |
-| Agents don't share real-time context | Orchestrator maintains shared state in workspace |
-| Rate limiting with many parallel agents | `AGENTK_MAX_PARALLEL` limits concurrent spawns |
+Environment variables:
 
-## Roadmap
-
-- [ ] Web UI dashboard
-- [ ] Custom agent definitions
-- [ ] Persistent conversation history
-- [ ] Cost tracking per agent
-- [ ] Team collaboration mode
-- [ ] Plugin system for custom tools
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `AGENTK_MODE` | Default mode (`dev` or `ml`) | `dev` |
 
 ## Contributing
 
-Contributions welcome!
-
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing`)
+2. Create a feature branch
 3. Make your changes
-4. Run tests (`make test`)
+4. Run `npm run build` to compile
 5. Submit a pull request
 
 ## License
@@ -336,18 +188,18 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## Acknowledgments
 
-- Inspired by [Boris Cherny's parallel Claude workflow](https://x.com/bcherny)
-- Built for the Claude Code community
+- Built with [Ink](https://github.com/vadimdemedes/ink) by Vadim Demedes
 - Powered by [Anthropic's Claude](https://anthropic.com)
+- Inspired by Claude Code's beautiful terminal UI
 
 ---
 
 <p align="center">
-<strong>AGENT-K</strong> - Because one Claude is good, but a team of Claudes is better.
+<strong>AGENT-K</strong> - Multi-Agent Intelligence for Your Terminal
 </p>
 
 <p align="center">
-<a href="https://github.com/de5truct0/agentk">GitHub</a> |
-<a href="https://www.npmjs.com/package/agentk8">npm</a> |
+<a href="https://github.com/de5truct0/agentk">GitHub</a> •
+<a href="https://www.npmjs.com/package/agentk8">npm</a> •
 <a href="https://pypi.org/project/agentk8/">PyPI</a>
 </p>
