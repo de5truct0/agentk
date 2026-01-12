@@ -5,7 +5,7 @@ class Agentk < Formula
   desc "Multi-Agent Claude Code Terminal Suite"
   homepage "https://github.com/de5truct0/agentk"
   url "https://github.com/de5truct0/agentk/archive/refs/tags/v1.0.0.tar.gz"
-  sha256 "PLACEHOLDER_SHA256"  # Update this after creating release
+  sha256 "0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5"
   license "MIT"
   head "https://github.com/de5truct0/agentk.git", branch: "main"
 
@@ -16,26 +16,20 @@ class Agentk < Formula
   # Users must install it separately
 
   def install
-    # Install main script
-    bin.install "agentk/agentk"
+    # Install library files to libexec
+    (libexec/"lib").install Dir["lib/*"]
+    (libexec/"modes").install Dir["modes/*"]
 
-    # Install library files
-    (libexec/"lib").install Dir["agentk/lib/*"]
-
-    # Install mode configurations
-    (libexec/"modes").install Dir["agentk/modes/*"]
+    # Install main script to libexec
+    libexec.install "agentk"
 
     # Create wrapper that sets AGENTK_ROOT
-    (bin/"agentk").unlink
     (bin/"agentk").write <<~EOS
       #!/usr/bin/env bash
       export AGENTK_ROOT="#{libexec}"
       exec "#{libexec}/agentk" "$@"
     EOS
     (bin/"agentk").chmod 0755
-
-    # Install the actual agentk script to libexec
-    libexec.install "agentk/agentk"
   end
 
   def caveats
