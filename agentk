@@ -297,7 +297,10 @@ cmd_scout() {
     fi
 
     local scout_task="$cmd: $query"
-    print_info "Scout is searching..."
+
+    # Show Scout response box
+    print_agent_response_start "Scout"
+    printf "${CYAN}│${RESET} Searching: %s\n" "$query"
 
     # Create task for scout
     local task_id
@@ -307,7 +310,7 @@ cmd_scout() {
     spawn_agent "scout" "$task_id" "$AGENTK_MODE"
 
     # Wait for result
-    print_info "Waiting for Scout..."
+    printf "${CYAN}│${RESET} ${DIM}Processing...${RESET}\n"
     watch_task "$task_id" 120
 
     # Display result
@@ -316,9 +319,10 @@ cmd_scout() {
     if [[ -f "$result_file" ]]; then
         local output
         output=$(jq -r '.output' "$result_file")
-        echo
-        echo "$output"
+        print_chat_content "$output" "${CYAN}│${RESET}"
     fi
+
+    print_agent_response_end
 }
 
 cmd_ml() {
@@ -408,6 +412,8 @@ run_interactive() {
 
         # Check for command
         if [[ "$input" == /* ]]; then
+            # Close user input box for commands
+            print_user_message_end
             local cmd="${input%% *}"
             local args="${input#* }"
             [[ "$cmd" == "$args" ]] && args=""
@@ -415,11 +421,15 @@ run_interactive() {
             continue
         fi
 
+        # Close user input box
+        print_user_message_end
+
         # Regular input - send to orchestrator (or focused agent)
         local target_agent="${FOCUSED_AGENT:-orchestrator}"
 
-        echo
-        print_orchestrator_message "Analyzing task..."
+        # Show agent response box
+        print_agent_response_start "Orchestrator"
+        printf "${CYAN}│${RESET} Analyzing task...\n"
 
         # Create task
         local task_id
@@ -428,7 +438,7 @@ run_interactive() {
         # For now, spawn the agent interactively
         spawn_agent_interactive "$target_agent" "$AGENTK_MODE" "$input"
 
-        echo
+        print_agent_response_end
     done
 }
 
@@ -446,14 +456,22 @@ run_one_shot() {
 
     print_banner
     print_mode_banner "$AGENTK_MODE"
-    print_task "$prompt"
+
+    # Show user input with chat boundaries
+    print_user_input_box "$prompt"
 
     # Create task for orchestrator
     local task_id
     task_id=$(create_task "" "orchestrate" "orchestrator" "$prompt" 1)
 
+    # Show orchestrator response
+    print_agent_response_start "Orchestrator"
+    printf "${CYAN}│${RESET} Processing your request...\n"
+
     # Spawn orchestrator interactively
     spawn_agent_interactive "orchestrator" "$AGENTK_MODE" "$prompt"
+
+    print_agent_response_end
 
     # Cleanup
     end_session

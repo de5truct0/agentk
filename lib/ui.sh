@@ -283,40 +283,135 @@ print_progress_bar() {
 }
 
 # =============================================================================
+# CHAT UI - Claude Code Style
+# =============================================================================
+
+# Chat message boundaries
+CHAT_USER_PREFIX="╭─"
+CHAT_USER_SUFFIX="─╮"
+CHAT_AGENT_PREFIX="├─"
+CHAT_AGENT_SUFFIX="─┤"
+CHAT_END="╰"
+CHAT_CONTINUE="│"
+
+print_chat_divider() {
+    local width
+    width=$(get_terminal_width)
+    local line_width=$((width - 4))
+    printf "${DIM}%s%${line_width}s%s${RESET}\n" "├" "" "┤" | tr ' ' '─'
+}
+
+print_user_message_start() {
+    local width
+    width=$(get_terminal_width)
+    local line_width=$((width - 12))
+    echo
+    printf "${GREEN}╭─ You ${RESET}${DIM}"
+    printf "%${line_width}s" | tr ' ' '─'
+    printf "${RESET}\n"
+}
+
+print_user_message_end() {
+    local width
+    width=$(get_terminal_width)
+    printf "${DIM}╰"
+    printf "%$((width - 2))s" | tr ' ' '─'
+    printf "${RESET}\n"
+}
+
+print_agent_response_start() {
+    local agent="${1:-Agent}"
+    local width
+    width=$(get_terminal_width)
+    local agent_label=" $agent "
+    local line_width=$((width - ${#agent_label} - 4))
+    echo
+    printf "${CYAN}╭─${BOLD}${agent_label}${RESET}${DIM}"
+    printf "%${line_width}s" | tr ' ' '─'
+    printf "${RESET}\n"
+}
+
+print_agent_response_end() {
+    local width
+    width=$(get_terminal_width)
+    printf "${DIM}╰"
+    printf "%$((width - 2))s" | tr ' ' '─'
+    printf "${RESET}\n"
+}
+
+print_chat_content() {
+    local content="$1"
+    local prefix="${2:-${DIM}│${RESET}}"
+
+    # Print each line with the prefix
+    while IFS= read -r line; do
+        printf "%s %s\n" "$prefix" "$line"
+    done <<< "$content"
+}
+
+print_user_input_box() {
+    local input="$1"
+    print_user_message_start
+    print_chat_content "$input" "${GREEN}│${RESET}"
+    print_user_message_end
+}
+
+print_agent_response_box() {
+    local agent="$1"
+    local response="$2"
+    print_agent_response_start "$agent"
+    print_chat_content "$response" "${CYAN}│${RESET}"
+    print_agent_response_end
+}
+
+# =============================================================================
 # MESSAGES
 # =============================================================================
 
 print_task() {
     local task="$1"
-    echo
-    echo "${BOLD}Task:${RESET} ${CYAN}\"$task\"${RESET}"
-    echo
+    print_user_message_start
+    printf "${GREEN}│${RESET} ${BOLD}Task:${RESET} %s\n" "$task"
+    print_user_message_end
 }
 
 print_orchestrator_message() {
     local message="$1"
-    echo "${MAGENTA}[Orchestrator]${RESET} $message"
+    print_agent_response_start "Orchestrator"
+    print_chat_content "$message" "${MAGENTA}│${RESET}"
+    print_agent_response_end
 }
 
 print_agent_message() {
     local agent="$1"
     local message="$2"
-    echo "${CYAN}[$agent]${RESET} $message"
+    print_agent_response_start "$agent"
+    print_chat_content "$message" "${CYAN}│${RESET}"
+    print_agent_response_end
 }
 
 print_user_prompt() {
-    printf "\n${GREEN}You:${RESET} "
+    echo
+    printf "${GREEN}╭─ You ────────────────────────────────────────────────${RESET}\n"
+    printf "${GREEN}│${RESET} "
 }
 
 print_focus_prompt() {
     local agent="$1"
-    printf "\n${CYAN}[$agent]${RESET} ${GREEN}You:${RESET} "
+    echo
+    printf "${CYAN}╭─ ${BOLD}$agent${RESET}${CYAN} (focused) ──────────────────────────────────${RESET}\n"
+    printf "${CYAN}│${RESET} "
 }
 
 print_task_assignment() {
     local agent="$1"
     local task="$2"
-    echo "  ${DIM}→${RESET} ${BOLD}$agent:${RESET} $task"
+    echo "${CYAN}│${RESET}   ${DIM}→${RESET} ${BOLD}$agent:${RESET} $task"
+}
+
+print_thinking() {
+    local message="${1:-Thinking...}"
+    printf "${DIM}│ %s${RESET}\n" "$message"
 }
 
 # =============================================================================
