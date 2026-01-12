@@ -3,11 +3,11 @@
 
 class Agentk < Formula
   desc "Multi-Agent Claude Code Terminal Suite"
-  homepage "https://github.com/adityakatiyar/agentk"
-  url "https://github.com/adityakatiyar/agentk/archive/refs/tags/v1.0.0.tar.gz"
+  homepage "https://github.com/de5truct0/agentk"
+  url "https://github.com/de5truct0/agentk/archive/refs/tags/v1.0.0.tar.gz"
   sha256 "PLACEHOLDER_SHA256"  # Update this after creating release
   license "MIT"
-  head "https://github.com/adityakatiyar/agentk.git", branch: "main"
+  head "https://github.com/de5truct0/agentk.git", branch: "main"
 
   depends_on "bash" => ">= 4.0"
   depends_on "jq"

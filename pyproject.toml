@@ -44,10 +44,10 @@ requires-python = ">=3.8"
 dependencies = []
 
 [project.urls]
-Homepage = "https://github.com/adityakatiyar/agentk"
-Documentation = "https://github.com/adityakatiyar/agentk#readme"
-Repository = "https://github.com/adityakatiyar/agentk.git"
-Issues = "https://github.com/adityakatiyar/agentk/issues"
+Homepage = "https://github.com/de5truct0/agentk"
+Documentation = "https://github.com/de5truct0/agentk#readme"
+Repository = "https://github.com/de5truct0/agentk.git"
+Issues = "https://github.com/de5truct0/agentk/issues"
 
 [project.scripts]
 agentk = "agentk.cli:main"

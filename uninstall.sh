@@ -140,7 +140,7 @@ main() {
     echo -e "${GREEN}╰─────────────────────────────────────────────────╯${RESET}"
     echo
     echo "To reinstall, run:"
-    echo "  curl -sSL https://raw.githubusercontent.com/adityakatiyar/agentk/main/install.sh | bash"
+    echo "  curl -sSL https://raw.githubusercontent.com/de5truct0/agentk/main/install.sh | bash"
     echo
 }
 

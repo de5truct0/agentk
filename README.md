@@ -58,12 +58,12 @@ You: _
 
 ### Quick Install (Recommended)
 ```bash
-curl -sSL https://raw.githubusercontent.com/adityakatiyar/agentk/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/de5truct0/agentk/main/install.sh | bash
 ```
 
 ### Homebrew (macOS/Linux)
 ```bash
-brew tap adityakatiyar/agentk
+brew tap de5truct0/agentk
 brew install agentk
 ```
 
@@ -79,7 +79,7 @@ pip install agentk
 
 ### From Source
 ```bash
-git clone https://github.com/adityakatiyar/agentk.git
+git clone https://github.com/de5truct0/agentk.git
 cd agentk
 make install
 ```

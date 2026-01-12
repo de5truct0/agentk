@@ -9,7 +9,7 @@ set -euo pipefail
 # =============================================================================
 
 AGENTK_VERSION="1.0.0"
-AGENTK_REPO="adityakatiyar/agentk"
+AGENTK_REPO="de5truct0/agentk"
 INSTALL_DIR="${AGENTK_INSTALL_DIR:-$HOME/.agentk}"
 BIN_DIR="${AGENTK_BIN_DIR:-$HOME/.local/bin}"
 

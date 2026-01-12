@@ -17,13 +17,13 @@
   ],
   "author": "Aditya Katiyar",
   "license": "MIT",
-  "homepage": "https://github.com/adityakatiyar/agentk#readme",
+  "homepage": "https://github.com/de5truct0/agentk#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/adityakatiyar/agentk.git"
+    "url": "git+https://github.com/de5truct0/agentk.git"
   },
   "bugs": {
-    "url": "https://github.com/adityakatiyar/agentk/issues"
+    "url": "https://github.com/de5truct0/agentk/issues"
   },
   "bin": {
     "agentk": "./bin/agentk-wrapper.js"
