@@ -1,5 +1,8 @@
 # AGENT-K .gitignore
 
+# Build output
+dist/
+
 # Workspace (runtime data)
 workspace/
 

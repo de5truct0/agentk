@@ -1,49 +1,38 @@
 {
   "name": "agentk8",
-  "version": "1.0.5",
-  "description": "Multi-Agent Claude Code Terminal Suite - Orchestrate multiple Claude agents for software development and ML research",
-  "keywords": [
-    "claude",
-    "claude-code",
-    "ai",
-    "agents",
-    "multi-agent",
-    "llm",
-    "cli",
-    "terminal",
-    "developer-tools",
-    "ml",
-    "machine-learning"
-  ],
-  "author": "Aditya Katiyar",
-  "license": "MIT",
-  "homepage": "https://github.com/de5truct0/agentk#readme",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/de5truct0/agentk.git"
-  },
-  "bugs": {
-    "url": "https://github.com/de5truct0/agentk/issues"
-  },
+  "version": "2.0.0",
+  "description": "Multi-Agent Claude Code Terminal Suite",
+  "type": "module",
+  "main": "dist/index.js",
   "bin": {
-    "agentk": "./bin/agentk-wrapper.js"
+    "agentk": "dist/cli.js"
   },
   "files": [
-    "bin/",
-    "lib/",
-    "modes/",
-    "agentk"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
-    "postinstall": "node bin/postinstall.js",
-    "test": "echo \"Tests not implemented yet\" && exit 0"
+    "build": "tsc",
+    "dev": "tsx src/cli.tsx",
+    "start": "node dist/cli.js",
+    "prepublishOnly": "npm run build"
   },
-  "engines": {
-    "node": ">=14.0.0"
+  "keywords": ["claude", "ai", "agents", "multi-agent", "cli", "terminal"],
+  "author": "Aditya Katiyar",
+  "license": "MIT",
+  "dependencies": {
+    "ink": "^5.0.1",
+    "ink-text-input": "^6.0.0",
+    "react": "^18.2.0",
+    "chalk": "^5.3.0",
+    "meow": "^13.0.0"
   },
-  "os": [
-    "darwin",
-    "linux"
-  ],
-  "preferGlobal": true
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.2.0",
+    "@types/figlet": "^1.5.8",
+    "typescript": "^5.0.0",
+    "tsx": "^4.0.0"
+  }
 }

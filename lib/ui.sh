@@ -319,58 +319,74 @@ print_chat_divider() {
     printf "${DIM}%s%${line_width}s%s${RESET}\n" "├" "" "┤" | tr ' ' '─'
 }
 
+# =============================================================================
+# CLAUDE CODE STYLE CHAT BOXES
+# =============================================================================
+
 print_user_message_start() {
     local width
     width=$(get_terminal_width)
-    local line_width=$((width - 12))
+    [[ $width -gt 80 ]] && width=80
     echo
-    printf "${GREEN}╭─ You ${RESET}${DIM}"
-    printf "%${line_width}s" | tr ' ' '─'
-    printf "${RESET}\n"
+    printf "${GREEN}╭─${BOLD} You ${RESET}${GREEN}"
+    printf '%*s' "$((width - 8))" '' | tr ' ' '─'
+    printf "╮${RESET}\n"
 }
 
 print_user_message_end() {
     local width
     width=$(get_terminal_width)
-    printf "${DIM}╰"
-    printf "%$((width - 2))s" | tr ' ' '─'
-    printf "${RESET}\n"
+    [[ $width -gt 80 ]] && width=80
+    printf "${GREEN}╰"
+    printf '%*s' "$((width - 2))" '' | tr ' ' '─'
+    printf "╯${RESET}\n"
 }
 
 print_agent_response_start() {
     local agent="${1:-Agent}"
     local width
     width=$(get_terminal_width)
-    local agent_label=" $agent "
-    local line_width=$((width - ${#agent_label} - 4))
+    [[ $width -gt 80 ]] && width=80
+    local agent_len=${#agent}
+    local pad_len=$((width - agent_len - 6))
     echo
-    printf "${CYAN}╭─${BOLD}${agent_label}${RESET}${DIM}"
-    printf "%${line_width}s" | tr ' ' '─'
-    printf "${RESET}\n"
+    printf "${CYAN}╭─${BOLD} %s ${RESET}${CYAN}" "$agent"
+    printf '%*s' "$pad_len" '' | tr ' ' '─'
+    printf "╮${RESET}\n"
 }
 
 print_agent_response_end() {
     local width
     width=$(get_terminal_width)
-    printf "${DIM}╰"
-    printf "%$((width - 2))s" | tr ' ' '─'
-    printf "${RESET}\n"
+    [[ $width -gt 80 ]] && width=80
+    printf "${CYAN}╰"
+    printf '%*s' "$((width - 2))" '' | tr ' ' '─'
+    printf "╯${RESET}\n"
 }
 
 print_chat_content() {
     local content="$1"
-    local prefix="${2:-${DIM}│${RESET}}"
+    local color="${2:-${DIM}}"
+    local width
+    width=$(get_terminal_width)
+    [[ $width -gt 80 ]] && width=80
+    local inner_width=$((width - 4))
 
-    # Print each line with the prefix
-    while IFS= read -r line; do
-        printf "%s %s\n" "$prefix" "$line"
+    # Print each line with box borders
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        # Truncate long lines
+        if [[ ${#line} -gt $inner_width ]]; then
+            line="${line:0:$((inner_width - 3))}..."
+        fi
+        local pad=$((inner_width - ${#line}))
+        printf "${color}│${RESET} %s%*s ${color}│${RESET}\n" "$line" "$pad" ""
     done <<< "$content"
 }
 
 print_user_input_box() {
     local input="$1"
     print_user_message_start
-    print_chat_content "$input" "${GREEN}│${RESET}"
+    print_chat_content "$input" "${GREEN}"
     print_user_message_end
 }
 
@@ -378,7 +394,7 @@ print_agent_response_box() {
     local agent="$1"
     local response="$2"
     print_agent_response_start "$agent"
-    print_chat_content "$response" "${CYAN}│${RESET}"
+    print_chat_content "$response" "${CYAN}"
     print_agent_response_end
 }
 
@@ -408,6 +424,17 @@ print_agent_message() {
     print_agent_response_end
 }
 
+# Prompt strings for read -p (protected from backspace)
+get_user_prompt() {
+    echo -e "\n\033[32m>\033[0m "
+}
+
+get_focus_prompt() {
+    local agent="$1"
+    echo -e "\n\033[36m${agent}>\033[0m "
+}
+
+# Legacy functions for compatibility
 print_user_prompt() {
     printf "\n${GREEN}>${RESET} "
 }
