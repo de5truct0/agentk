@@ -8,14 +8,14 @@ set -euo pipefail
 # INITIALIZATION
 # =============================================================================
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-export AGENTK_ROOT="$SCRIPT_DIR"
+_AGENTK_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export AGENTK_ROOT="$_AGENTK_SCRIPT_DIR"
 
-# Source libraries
-source "$SCRIPT_DIR/lib/core.sh"
-source "$SCRIPT_DIR/lib/ui.sh"
-source "$SCRIPT_DIR/lib/ipc.sh"
-source "$SCRIPT_DIR/lib/spawn.sh"
+# Source libraries (use AGENTK_ROOT to avoid variable scope issues)
+source "$AGENTK_ROOT/lib/core.sh"
+source "$AGENTK_ROOT/lib/ui.sh"
+source "$AGENTK_ROOT/lib/ipc.sh"
+source "$AGENTK_ROOT/lib/spawn.sh"
 
 # =============================================================================
 # CONFIGURATION

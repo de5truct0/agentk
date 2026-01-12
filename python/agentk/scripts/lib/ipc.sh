@@ -4,9 +4,11 @@
 
 set -euo pipefail
 
-# Source core for utilities
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/core.sh"
+# Source core for utilities (use AGENTK_ROOT if set, otherwise compute local path)
+_IPC_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -z "${AGENTK_ROOT:-}" ]]; then
+    source "$_IPC_SCRIPT_DIR/core.sh"
+fi
 
 # =============================================================================
 # TASK STATUS CONSTANTS

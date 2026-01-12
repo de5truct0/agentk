@@ -4,9 +4,11 @@
 
 set -euo pipefail
 
-# Source core for colors
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/core.sh"
+# Source core for colors (use AGENTK_ROOT if set, otherwise compute local path)
+_UI_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -z "${AGENTK_ROOT:-}" ]]; then
+    source "$_UI_SCRIPT_DIR/core.sh"
+fi
 
 # =============================================================================
 # UNICODE CHARACTERS

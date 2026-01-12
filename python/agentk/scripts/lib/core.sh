@@ -8,7 +8,7 @@ set -euo pipefail
 # CONSTANTS
 # =============================================================================
 
-AGENTK_VERSION="1.0.0"
+AGENTK_VERSION="1.0.1"
 AGENTK_ROOT="${AGENTK_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 AGENTK_WORKSPACE="${AGENTK_ROOT}/workspace"
 CLAUDE_KNOWLEDGE_CUTOFF="2024-04"
@@ -38,9 +38,18 @@ fi
 # LOGGING
 # =============================================================================
 
-# Log levels
+# Log levels (bash 3.x compatible - no associative arrays)
 LOG_LEVEL="${LOG_LEVEL:-info}"
-declare -A LOG_LEVELS=([debug]=0 [info]=1 [warn]=2 [error]=3)
+
+_get_log_level_num() {
+    case "$1" in
+        debug) echo 0 ;;
+        info)  echo 1 ;;
+        warn)  echo 2 ;;
+        error) echo 3 ;;
+        *)     echo 1 ;;
+    esac
+}
 
 _log() {
     local level="$1"
@@ -49,8 +58,10 @@ _log() {
     timestamp=$(date '+%Y-%m-%d %H:%M:%S')
 
     # Check if we should log this level
-    local current_level=${LOG_LEVELS[${LOG_LEVEL}]:-1}
-    local msg_level=${LOG_LEVELS[${level}]:-1}
+    local current_level
+    current_level=$(_get_log_level_num "$LOG_LEVEL")
+    local msg_level
+    msg_level=$(_get_log_level_num "$level")
 
     if [[ $msg_level -ge $current_level ]]; then
         case "$level" in

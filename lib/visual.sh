@@ -4,10 +4,12 @@
 
 set -euo pipefail
 
-# Source dependencies
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/core.sh"
-source "$SCRIPT_DIR/ui.sh"
+# Source dependencies (use AGENTK_ROOT if set, otherwise compute local path)
+_VISUAL_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -z "${AGENTK_ROOT:-}" ]]; then
+    source "$_VISUAL_SCRIPT_DIR/core.sh"
+    source "$_VISUAL_SCRIPT_DIR/ui.sh"
+fi
 
 # =============================================================================
 # CONSTANTS

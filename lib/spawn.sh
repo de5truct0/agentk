@@ -1,21 +1,89 @@
 #!/usr/bin/env bash
 # AGENT-K Spawn Library
 # Claude subprocess spawning and management
+# Compatible with bash 3.x (no associative arrays)
 
 set -euo pipefail
 
-# Source dependencies
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/core.sh"
-source "$SCRIPT_DIR/ipc.sh"
+# Source dependencies (use AGENTK_ROOT if set, otherwise compute local path)
+_SPAWN_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -z "${AGENTK_ROOT:-}" ]]; then
+    source "$_SPAWN_SCRIPT_DIR/core.sh"
+    source "$_SPAWN_SCRIPT_DIR/ipc.sh"
+fi
 
 # =============================================================================
-# GLOBALS
+# PID FILE MANAGEMENT (bash 3.x compatible)
 # =============================================================================
 
-# Track spawned agent PIDs
-declare -A AGENT_PIDS=()
-declare -A AGENT_TASKS=()
+_get_agent_pid_file() {
+    local agent="$1"
+    echo "$AGENTK_WORKSPACE/.pids/${agent}.pid"
+}
+
+_get_agent_task_file() {
+    local agent="$1"
+    echo "$AGENTK_WORKSPACE/.pids/${agent}.task"
+}
+
+_set_agent_pid() {
+    local agent="$1"
+    local pid="$2"
+    local pid_dir="$AGENTK_WORKSPACE/.pids"
+    mkdir -p "$pid_dir"
+    echo "$pid" > "$(_get_agent_pid_file "$agent")"
+}
+
+_get_agent_pid() {
+    local agent="$1"
+    local pid_file
+    pid_file="$(_get_agent_pid_file "$agent")"
+    if [[ -f "$pid_file" ]]; then
+        cat "$pid_file"
+    else
+        echo ""
+    fi
+}
+
+_clear_agent_pid() {
+    local agent="$1"
+    rm -f "$(_get_agent_pid_file "$agent")"
+}
+
+_set_agent_task() {
+    local agent="$1"
+    local task_id="$2"
+    local pid_dir="$AGENTK_WORKSPACE/.pids"
+    mkdir -p "$pid_dir"
+    echo "$task_id" > "$(_get_agent_task_file "$agent")"
+}
+
+_get_agent_task() {
+    local agent="$1"
+    local task_file
+    task_file="$(_get_agent_task_file "$agent")"
+    if [[ -f "$task_file" ]]; then
+        cat "$task_file"
+    else
+        echo ""
+    fi
+}
+
+_clear_agent_task() {
+    local agent="$1"
+    rm -f "$(_get_agent_task_file "$agent")"
+}
+
+_list_active_agents() {
+    local pid_dir="$AGENTK_WORKSPACE/.pids"
+    if [[ -d "$pid_dir" ]]; then
+        for pid_file in "$pid_dir"/*.pid; do
+            if [[ -f "$pid_file" ]]; then
+                basename "$pid_file" .pid
+            fi
+        done
+    fi
+}
 
 # =============================================================================
 # AGENT PROMPT LOADING
@@ -144,8 +212,8 @@ Context Files: $context_files"
     ) >> "$log_file" 2>&1 &
 
     local pid=$!
-    AGENT_PIDS[$agent]=$pid
-    AGENT_TASKS[$agent]=$task_id
+    _set_agent_pid "$agent" "$pid"
+    _set_agent_task "$agent" "$task_id"
 
     log_debug "Agent $agent spawned with PID: $pid"
     echo "$pid"
@@ -185,16 +253,18 @@ spawn_agent_interactive() {
 is_agent_running() {
     local agent="$1"
 
-    if [[ -z "${AGENT_PIDS[$agent]:-}" ]]; then
+    local pid
+    pid=$(_get_agent_pid "$agent")
+
+    if [[ -z "$pid" ]]; then
         return 1
     fi
 
-    local pid="${AGENT_PIDS[$agent]}"
     if kill -0 "$pid" 2>/dev/null; then
         return 0
     else
         # Agent finished, clean up
-        unset AGENT_PIDS[$agent]
+        _clear_agent_pid "$agent"
         return 1
     fi
 }
@@ -203,12 +273,14 @@ wait_agent() {
     local agent="$1"
     local timeout="${2:-300}"
 
-    if [[ -z "${AGENT_PIDS[$agent]:-}" ]]; then
+    local pid
+    pid=$(_get_agent_pid "$agent")
+
+    if [[ -z "$pid" ]]; then
         log_warn "Agent not running: $agent"
         return 1
     fi
 
-    local pid="${AGENT_PIDS[$agent]}"
     local elapsed=0
 
     while kill -0 "$pid" 2>/dev/null && [[ $elapsed -lt $timeout ]]; do
@@ -223,7 +295,7 @@ wait_agent() {
 
     # Get exit status
     wait "$pid" 2>/dev/null || true
-    unset AGENT_PIDS[$agent]
+    _clear_agent_pid "$agent"
 
     log_debug "Agent $agent finished"
     return 0
@@ -232,12 +304,13 @@ wait_agent() {
 kill_agent() {
     local agent="$1"
 
-    if [[ -z "${AGENT_PIDS[$agent]:-}" ]]; then
+    local pid
+    pid=$(_get_agent_pid "$agent")
+
+    if [[ -z "$pid" ]]; then
         log_warn "Agent not running: $agent"
         return 0
     fi
-
-    local pid="${AGENT_PIDS[$agent]}"
 
     # Try graceful shutdown first
     kill -TERM "$pid" 2>/dev/null || true
@@ -249,19 +322,22 @@ kill_agent() {
     fi
 
     # Cancel any active task
-    if [[ -n "${AGENT_TASKS[$agent]:-}" ]]; then
-        cancel_task "${AGENT_TASKS[$agent]}"
-        unset AGENT_TASKS[$agent]
+    local task_id
+    task_id=$(_get_agent_task "$agent")
+    if [[ -n "$task_id" ]]; then
+        cancel_task "$task_id"
+        _clear_agent_task "$agent"
     fi
 
-    unset AGENT_PIDS[$agent]
+    _clear_agent_pid "$agent"
     update_session_agent "$agent" "stopped" "Killed by user"
 
     log_info "Killed agent: $agent"
 }
 
 kill_all_agents() {
-    for agent in "${!AGENT_PIDS[@]}"; do
+    local agent
+    for agent in $(_list_active_agents); do
         kill_agent "$agent"
     done
 }
@@ -275,124 +351,52 @@ get_agent_status() {
 
     if is_agent_running "$agent"; then
         echo "running"
-    elif [[ -n "${AGENT_TASKS[$agent]:-}" ]]; then
-        local task_status
-        task_status=$(get_task_status "${AGENT_TASKS[$agent]}")
-        echo "$task_status"
     else
-        echo "idle"
+        local task_id
+        task_id=$(_get_agent_task "$agent")
+        if [[ -n "$task_id" ]]; then
+            local task_status
+            task_status=$(get_task_status "$task_id")
+            echo "$task_status"
+        else
+            echo "idle"
+        fi
     fi
 }
 
 get_all_agent_status() {
     local mode="${1:-dev}"
-    local agents=()
+    local agents
 
     case "$mode" in
-        dev) agents=("orchestrator" "engineer" "tester" "security" "scout") ;;
-        ml)  agents=("orchestrator" "researcher" "ml-engineer" "data-engineer" "evaluator" "scout") ;;
+        dev) agents="orchestrator engineer tester security scout" ;;
+        ml)  agents="orchestrator researcher ml-engineer data-engineer evaluator scout" ;;
+        *)   agents="orchestrator engineer tester security scout" ;;
     esac
 
     echo "{"
     local first=true
-    for agent in "${agents[@]}"; do
+    for agent in $agents; do
         local status
         status=$(get_agent_status "$agent")
-        local message=""
-
-        if [[ -n "${AGENT_TASKS[$agent]:-}" ]]; then
-            message=$(get_task_field "${AGENT_TASKS[$agent]}" "prompt" | head -c 50)
-        fi
 
         if [[ "$first" == "true" ]]; then
             first=false
         else
             echo ","
         fi
-
-        printf '  "%s": {"status": "%s", "message": "%s"}' "$agent" "$status" "$message"
+        echo "  \"$agent\": \"$status\""
     done
-    echo
     echo "}"
 }
 
-# =============================================================================
-# AGENT LOG VIEWING
-# =============================================================================
-
-view_agent_log() {
-    local agent="$1"
-    local lines="${2:-50}"
-
-    local log_file
-    log_file=$(get_agent_log "$agent")
-
-    if [[ -f "$log_file" ]]; then
-        tail -n "$lines" "$log_file"
-    else
-        echo "No logs found for agent: $agent"
-    fi
-}
-
-follow_agent_log() {
-    local agent="$1"
-
-    local log_file
-    log_file=$(get_agent_log "$agent")
-
-    if [[ -f "$log_file" ]]; then
-        tail -f "$log_file"
-    else
-        echo "No logs found for agent: $agent"
-    fi
-}
-
-clear_agent_log() {
-    local agent="$1"
-
-    local log_file
-    log_file=$(get_agent_log "$agent")
-
-    if [[ -f "$log_file" ]]; then
-        > "$log_file"
-        log_debug "Cleared log for agent: $agent"
-    fi
-}
-
-# =============================================================================
-# PARALLEL SPAWNING
-# =============================================================================
-
-spawn_agents_parallel() {
-    local mode="$1"
-    shift
-    local task_ids=("$@")
-
-    local pids=()
-
-    for task_id in "${task_ids[@]}"; do
-        local assigned_to
-        assigned_to=$(get_task_field "$task_id" "assigned_to")
-
-        spawn_agent "$assigned_to" "$task_id" "$mode" &
-        pids+=($!)
+get_running_agent_count() {
+    local count=0
+    local agent
+    for agent in $(_list_active_agents); do
+        if is_agent_running "$agent"; then
+            count=$((count + 1))
+        fi
     done
-
-    # Wait for all spawns to complete
-    for pid in "${pids[@]}"; do
-        wait "$pid" 2>/dev/null || true
-    done
+    echo "$count"
 }
-
-# =============================================================================
-# CLEANUP
-# =============================================================================
-
-cleanup_agents() {
-    log_info "Cleaning up agents..."
-    kill_all_agents
-    cancel_all_tasks
-}
-
-# Trap for cleanup on exit
-trap cleanup_agents EXIT INT TERM
