@@ -8,7 +8,7 @@ set -euo pipefail
 # CONSTANTS
 # =============================================================================
 
-AGENTK_VERSION="1.0.1"
+AGENTK_VERSION="1.0.2"
 AGENTK_ROOT="${AGENTK_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 AGENTK_WORKSPACE="${AGENTK_ROOT}/workspace"
 CLAUDE_KNOWLEDGE_CUTOFF="2024-04"
@@ -231,21 +231,20 @@ generate_task_id() {
 # =============================================================================
 
 check_dependencies() {
-    local missing=()
+    local has_jq has_claude
+    has_jq=$(command -v jq 2>/dev/null)
+    has_claude=$(command -v claude 2>/dev/null)
 
-    # Required
-    command -v jq &>/dev/null || missing+=("jq")
-    command -v claude &>/dev/null || missing+=("claude")
-
-    # Check bash version
-    if [[ "${BASH_VERSION%%.*}" -lt 4 ]]; then
-        log_error "Bash 4.0+ required. Current: $BASH_VERSION"
-        exit 1
-    fi
-
-    if [[ ${#missing[@]} -gt 0 ]]; then
-        log_error "Missing dependencies: ${missing[*]}"
-        log_info "Install with: brew install ${missing[*]}"
+    # Check required dependencies
+    if [[ -z "$has_jq" ]] || [[ -z "$has_claude" ]]; then
+        if [[ -z "$has_jq" ]]; then
+            log_error "Missing dependency: jq"
+            log_info "Install with: brew install jq"
+        fi
+        if [[ -z "$has_claude" ]]; then
+            log_error "Missing dependency: claude (Claude Code CLI)"
+            log_info "Install from: https://claude.ai/code"
+        fi
         exit 1
     fi
 
