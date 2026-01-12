@@ -64,18 +64,20 @@ curl -sSL https://raw.githubusercontent.com/de5truct0/agentk/main/install.sh | b
 ### Homebrew (macOS/Linux)
 ```bash
 brew tap de5truct0/agentk
-brew install agentk
+brew install agentk8
 ```
 
 ### npm
 ```bash
-npm install -g agentk
+npm install -g agentk8
 ```
 
 ### pip
 ```bash
-pip install agentk
+pip install agentk8
 ```
+
+> **Note**: Package name is `agentk8` on all registries. The installed command is `agentk`.
 
 ### From Source
 ```bash

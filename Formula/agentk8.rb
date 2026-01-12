@@ -1,7 +1,7 @@
 # Homebrew Formula for AGENT-K
 # Multi-Agent Claude Code Terminal Suite
 
-class Agentk < Formula
+class Agentk8 < Formula
   desc "Multi-Agent Claude Code Terminal Suite"
   homepage "https://github.com/de5truct0/agentk"
   url "https://github.com/de5truct0/agentk/archive/refs/tags/v1.0.0.tar.gz"
