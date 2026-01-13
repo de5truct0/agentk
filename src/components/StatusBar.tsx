@@ -22,17 +22,17 @@ const theme = {
   done: '#48bb78',
 };
 
-// Agent icons
+// Agent icons - using consistent single-width chars
 const agentIcons: Record<string, string> = {
-  Orchestrator: '◆',
-  Engineer: '⚙',
-  Tester: '✓',
-  Security: '⛨',
-  Scout: '◎',
-  Researcher: '◈',
-  'ML Engineer': '⬡',
-  'Data Engineer': '⬢',
-  Evaluator: '◉',
+  Orchestrator: 'O',
+  Engineer: 'E',
+  Tester: 'T',
+  Security: 'S',
+  Scout: 'X',
+  Researcher: 'R',
+  'ML Engineer': 'M',
+  'Data Engineer': 'D',
+  Evaluator: 'V',
 };
 
 export const StatusBar: React.FC<StatusBarProps> = ({

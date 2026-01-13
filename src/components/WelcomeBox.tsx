@@ -13,6 +13,9 @@ const theme = {
   dim: '#718096',
   text: '#e2e8f0',
   title: '#f6e05e',
+  koi1: '#f6ad55',  // orange koi
+  koi2: '#e2e8f0',  // white koi
+  water: '#4299e1', // blue water
 };
 
 export const WelcomeBox: React.FC<WelcomeBoxProps> = ({ version, mode }) => {
@@ -49,11 +52,12 @@ export const WelcomeBox: React.FC<WelcomeBoxProps> = ({ version, mode }) => {
         <Text color={theme.border}>│</Text>
       </Box>
 
-      {/* Tiger ASCII art row 1 */}
+      {/* Koi fish row 1 - orange koi swimming right */}
       <Box>
         <Text color={theme.border}>│</Text>
         <Box width={leftWidth} justifyContent="center">
-          <Text color={theme.accent}>  /\_/\  </Text>
+          <Text color={theme.water}>~</Text>
+          <Text color={theme.koi1}>{" ><((("}{"'"}{">  "}</Text>
         </Box>
         <Text color={theme.border}>│</Text>
         <Box width={rightWidth} paddingLeft={1}>
@@ -63,11 +67,11 @@ export const WelcomeBox: React.FC<WelcomeBoxProps> = ({ version, mode }) => {
         <Text color={theme.border}>│</Text>
       </Box>
 
-      {/* Tiger ASCII art row 2 */}
+      {/* Koi fish row 2 - water */}
       <Box>
         <Text color={theme.border}>│</Text>
         <Box width={leftWidth} justifyContent="center">
-          <Text color={theme.accent}> ( o.o ) </Text>
+          <Text color={theme.water}>{"    ~  ~    "}</Text>
         </Box>
         <Text color={theme.border}>│</Text>
         <Box width={rightWidth} paddingLeft={1}>
@@ -76,11 +80,12 @@ export const WelcomeBox: React.FC<WelcomeBoxProps> = ({ version, mode }) => {
         <Text color={theme.border}>│</Text>
       </Box>
 
-      {/* Tiger ASCII art row 3 */}
+      {/* Koi fish row 3 - white koi swimming left */}
       <Box>
         <Text color={theme.border}>│</Text>
         <Box width={leftWidth} justifyContent="center">
-          <Text color={theme.accent}>  {'>'}  {'<'}  </Text>
+          <Text color={theme.koi2}>{"  <"}{"'"}{")))><"}</Text>
+          <Text color={theme.water}> ~</Text>
         </Box>
         <Text color={theme.border}>│</Text>
         <Box width={rightWidth} paddingLeft={1}>
