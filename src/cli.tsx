@@ -5,11 +5,11 @@ import meow from 'meow';
 import { App } from './components/App.js';
 import { checkClaudeInstalled } from './lib/claude.js';
 
-const VERSION = '2.1.2';
+const VERSION = '2.1.3';
 
 const cli = meow(`
   Usage
-    $ agentk [options]
+    $ agentk8 [options]
 
   Options
     --mode, -m     Set mode: dev (default) or ml
@@ -17,8 +17,8 @@ const cli = meow(`
     --help, -h     Show this help
 
   Examples
-    $ agentk              Start dev mode
-    $ agentk --mode ml    Start ML mode
+    $ agentk8              Start dev mode
+    $ agentk8 --mode ml    Start ML mode
 
   Commands (inside app)
     /help     Show available commands

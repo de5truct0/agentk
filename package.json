@@ -1,11 +1,11 @@
 {
   "name": "agentk8",
-  "version": "2.1.2",
+  "version": "2.1.3",
   "description": "Multi-Agent Claude Code Terminal Suite",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "agentk": "dist/cli.js"
+    "agentk8": "dist/cli.js"
   },
   "files": [
     "dist",
