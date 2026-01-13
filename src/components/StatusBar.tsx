@@ -28,6 +28,10 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   const [spinnerFrame, setSpinnerFrame] = useState(0);
 
   useEffect(() => {
+    if (!isProcessing) {
+      setElapsed('');
+      return;
+    }
     const interval = setInterval(() => {
       const secs = Math.floor((Date.now() - startTime.getTime()) / 1000);
       const mins = Math.floor(secs / 60);
@@ -35,7 +39,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
       setElapsed(mins > 0 ? `${mins}m ${remainingSecs}s` : `${secs}s`);
     }, 1000);
     return () => clearInterval(interval);
-  }, [startTime]);
+  }, [startTime, isProcessing]);
 
   useEffect(() => {
     if (!isProcessing) return;
@@ -71,8 +75,12 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           )}
         </Box>
         <Box>
-          <Text color={theme.dim}>{elapsed}</Text>
-          <Text color={theme.border}>{' │ '}</Text>
+          {elapsed && (
+            <>
+              <Text color={theme.dim}>{elapsed}</Text>
+              <Text color={theme.border}>{' │ '}</Text>
+            </>
+          )}
           <Text color={theme.accent}>↑ {formatTokens(tokens)}</Text>
           <Text color={theme.dim}>{' tokens  '}</Text>
         </Box>

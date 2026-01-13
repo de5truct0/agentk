@@ -37,8 +37,8 @@ export const Banner: React.FC<BannerProps> = ({ version }) => {
         <Text color={theme.border}>{' ─── '}</Text>
         <Text color={theme.dim}>{'◇'}</Text>
         <Text color={theme.border}>{' ─ '}</Text>
-        <Text color={theme.dim} italic>Multi-Agent Intelligence System</Text>
-        <Text color={theme.border}>{' ─'.repeat(Math.max(1, Math.floor((w - 58) / 2)))}</Text>
+        <Text color={theme.dim} italic>{w >= 80 ? 'Multi-Agent Intelligence System' : 'Multi-Agent System'}</Text>
+        <Text color={theme.border}>{' ─'.repeat(Math.max(1, Math.floor((w - (w >= 80 ? 58 : 48)) / 2)))}</Text>
         <Text color={theme.dim}> v{version}</Text>
       </Box>
 
