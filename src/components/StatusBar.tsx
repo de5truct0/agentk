@@ -22,17 +22,17 @@ const theme = {
   done: '#48bb78',
 };
 
-// Agent icons - using consistent single-width chars
+// Agent icons - matching WelcomeBox symbols
 const agentIcons: Record<string, string> = {
-  Orchestrator: 'O',
-  Engineer: 'E',
-  Tester: 'T',
-  Security: 'S',
-  Scout: 'X',
-  Researcher: 'R',
-  'ML Engineer': 'M',
-  'Data Engineer': 'D',
-  Evaluator: 'V',
+  Orchestrator: '*',
+  Engineer: '#',
+  Tester: '+',
+  Security: '!',
+  Scout: '@',
+  Researcher: '~',
+  'ML Engineer': '%',
+  'Data Engineer': '&',
+  Evaluator: '^',
 };
 
 export const StatusBar: React.FC<StatusBarProps> = ({
@@ -45,6 +45,8 @@ export const StatusBar: React.FC<StatusBarProps> = ({
 }) => {
   const [elapsed, setElapsed] = useState('');
   const [spinnerFrame, setSpinnerFrame] = useState(0);
+  const [pulseFrame, setPulseFrame] = useState(0);
+  const pulseBrackets = ['[', '(', '{', '<', '{', '('];
 
   useEffect(() => {
     if (!isProcessing) {
@@ -67,6 +69,15 @@ export const StatusBar: React.FC<StatusBarProps> = ({
     }, 100);
     return () => clearInterval(interval);
   }, [isProcessing]);
+
+  // Pulse animation for active agent
+  useEffect(() => {
+    if (!activeAgent) return;
+    const interval = setInterval(() => {
+      setPulseFrame(f => (f + 1) % pulseBrackets.length);
+    }, 200);
+    return () => clearInterval(interval);
+  }, [activeAgent]);
 
   const formatTokens = (t: number): string => {
     if (t >= 1000000) return `${(t / 1000000).toFixed(1)}M`;
@@ -94,14 +105,19 @@ export const StatusBar: React.FC<StatusBarProps> = ({
       <Text color={theme.border}> │ </Text>
 
       {/* Agent boxes */}
-      {modeAgents.map((agent, i) => (
-        <React.Fragment key={agent}>
-          <Text color={getAgentColor(agent)}>[</Text>
-          <Text color={getAgentColor(agent)}>{agentIcons[agent]}</Text>
-          <Text color={getAgentColor(agent)}>]</Text>
-          {i < modeAgents.length - 1 && <Text color={theme.dim}> </Text>}
-        </React.Fragment>
-      ))}
+      {modeAgents.map((agent, i) => {
+        const isActive = activeAgent === agent;
+        const leftBracket = isActive ? pulseBrackets[pulseFrame] : '[';
+        const rightBracket = isActive ? pulseBrackets[(pulseFrame + 3) % pulseBrackets.length] === '<' ? '>' : pulseBrackets[(pulseFrame + 3) % pulseBrackets.length] === '{' ? '}' : pulseBrackets[(pulseFrame + 3) % pulseBrackets.length] === '(' ? ')' : ']' : ']';
+        return (
+          <React.Fragment key={agent}>
+            <Text color={getAgentColor(agent)}>{leftBracket}</Text>
+            <Text color={getAgentColor(agent)}>{agentIcons[agent]}</Text>
+            <Text color={getAgentColor(agent)}>{rightBracket}</Text>
+            {i < modeAgents.length - 1 && <Text color={theme.dim}> </Text>}
+          </React.Fragment>
+        );
+      })}
 
       <Text color={theme.border}> │ </Text>
       <Text color={theme.dim}>? help</Text>

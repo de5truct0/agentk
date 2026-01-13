@@ -25,6 +25,18 @@ export const WelcomeBox: React.FC<WelcomeBoxProps> = ({ version, mode }) => {
   const rightWidth = boxWidth - leftWidth - 3;
 
   const modeLabel = mode === 'dev' ? 'Software Development' : 'ML Research';
+
+  // Agent icons matching StatusBar
+  const agentIcons: Record<string, string> = {
+    Orchestrator: '*',
+    Engineer: '#',
+    Tester: '+',
+    Security: '!',
+    Researcher: '~',
+    'ML Engineer': '%',
+    Evaluator: '^',
+  };
+
   const agents = mode === 'dev'
     ? ['Orchestrator', 'Engineer', 'Tester', 'Security']
     : ['Orchestrator', 'Researcher', 'ML Engineer', 'Evaluator'];
@@ -108,7 +120,7 @@ export const WelcomeBox: React.FC<WelcomeBoxProps> = ({ version, mode }) => {
         <Box width={boxWidth} justifyContent="center">
           {agents.map((agent, i) => (
             <React.Fragment key={agent}>
-              <Text color={theme.accent}>◆ </Text>
+              <Text color={theme.accent}>[{agentIcons[agent]}] </Text>
               <Text color={theme.text}>{agent}</Text>
               {i < agents.length - 1 && <Text color={theme.dim}>  ·  </Text>}
             </React.Fragment>
