@@ -1,21 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Text } from 'ink';
 import { icons } from '../themes/retro.js';
+import { AgentName } from './AgentPanel.js';
 
 interface StatusBarProps {
   mode: 'dev' | 'ml';
   tokens: number;
   startTime: Date;
   isProcessing?: boolean;
+  activeAgent?: AgentName;
+  completedAgents?: AgentName[];
 }
 
-// Matching sophisticated theme
+// Theme
 const theme = {
-  border: '#2d3748',
+  border: '#4a5568',
   accent: '#4fd1c5',
   highlight: '#81e6d9',
-  dim: '#4a5568',
-  glow: '#319795',
+  dim: '#718096',
+  active: '#f6e05e',
+  done: '#48bb78',
+};
+
+// Agent icons
+const agentIcons: Record<string, string> = {
+  Orchestrator: '◆',
+  Engineer: '⚙',
+  Tester: '✓',
+  Security: '⛨',
+  Scout: '◎',
+  Researcher: '◈',
+  'ML Engineer': '⬡',
+  'Data Engineer': '⬢',
+  Evaluator: '◉',
 };
 
 export const StatusBar: React.FC<StatusBarProps> = ({
@@ -23,8 +40,10 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   tokens,
   startTime,
   isProcessing = false,
+  activeAgent,
+  completedAgents = [],
 }) => {
-  const [elapsed, setElapsed] = useState('0s');
+  const [elapsed, setElapsed] = useState('');
   const [spinnerFrame, setSpinnerFrame] = useState(0);
 
   useEffect(() => {
@@ -56,35 +75,55 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   };
 
   const modeLabel = mode === 'dev' ? 'DEV' : 'ML';
-  const termWidth = process.stdout.columns || 80;
+
+  // Get agents for this mode
+  const modeAgents = mode === 'dev'
+    ? ['Orchestrator', 'Engineer', 'Tester', 'Security']
+    : ['Orchestrator', 'Researcher', 'ML Engineer', 'Evaluator'];
+
+  const getAgentColor = (agent: string): string => {
+    if (activeAgent === agent) return theme.active;
+    if (completedAgents.includes(agent as AgentName)) return theme.done;
+    return theme.dim;
+  };
 
   return (
-    <Box flexDirection="column">
-      <Text color={theme.border}>{'─'.repeat(termWidth)}</Text>
-      <Box justifyContent="space-between" width={termWidth}>
-        <Box>
-          <Text color={theme.dim}>{'  ◇ '}</Text>
-          <Text color={theme.accent}>{modeLabel}</Text>
-          <Text color={theme.border}>{' │ '}</Text>
-          <Text color={theme.dim}>/help</Text>
-          {isProcessing && (
-            <>
-              <Text color={theme.border}>{' │ '}</Text>
-              <Text color={theme.highlight}>{icons.spinner[spinnerFrame]}</Text>
-            </>
-          )}
-        </Box>
-        <Box>
-          {elapsed && (
-            <>
-              <Text color={theme.dim}>{elapsed}</Text>
-              <Text color={theme.border}>{' │ '}</Text>
-            </>
-          )}
-          <Text color={theme.accent}>↑ {formatTokens(tokens)}</Text>
-          <Text color={theme.dim}>{' tokens  '}</Text>
-        </Box>
-      </Box>
+    <Box>
+      <Text color={theme.dim}>  </Text>
+      <Text color={theme.accent}>{modeLabel}</Text>
+      <Text color={theme.border}> │ </Text>
+
+      {/* Agent boxes */}
+      {modeAgents.map((agent, i) => (
+        <React.Fragment key={agent}>
+          <Text color={getAgentColor(agent)}>[</Text>
+          <Text color={getAgentColor(agent)}>{agentIcons[agent]}</Text>
+          <Text color={getAgentColor(agent)}>]</Text>
+          {i < modeAgents.length - 1 && <Text color={theme.dim}> </Text>}
+        </React.Fragment>
+      ))}
+
+      <Text color={theme.border}> │ </Text>
+      <Text color={theme.dim}>? help</Text>
+
+      {isProcessing && (
+        <>
+          <Text color={theme.border}> │ </Text>
+          <Text color={theme.highlight}>{icons.spinner[spinnerFrame]}</Text>
+        </>
+      )}
+
+      {elapsed && (
+        <>
+          <Text color={theme.border}> │ </Text>
+          <Text color={theme.dim}>{elapsed}</Text>
+        </>
+      )}
+
+      {/* Right side - tokens */}
+      <Text color={theme.dim}>{'  '.repeat(3)}</Text>
+      <Text color={theme.accent}>↑ {formatTokens(tokens)}</Text>
+      <Text color={theme.dim}> tokens</Text>
     </Box>
   );
 };

@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Box, Text, useApp, useInput, Static } from 'ink';
-import { Banner } from './Banner.js';
+import { WelcomeBox } from './WelcomeBox.js';
 import { ChatMessage } from './ChatMessage.js';
 import { Input } from './Input.js';
 import { StatusBar } from './StatusBar.js';
 import { ThinkingIndicator } from './ThinkingIndicator.js';
-import { AgentPanel, AgentName } from './AgentPanel.js';
+import { AgentName } from './AgentPanel.js';
 import { runClaude } from '../lib/claude.js';
 
 interface Message {
@@ -15,9 +15,8 @@ interface Message {
   content: string;
   tokens?: { input: number; output: number };
   timestamp: Date;
-  isBanner?: boolean;
+  isWelcome?: boolean;
 }
-
 
 interface AppProps {
   mode: 'dev' | 'ml';
@@ -67,7 +66,6 @@ export const App: React.FC<AppProps> = ({ mode, version }) => {
     if (awaitingApproval) {
       if (input.toLowerCase() === 'y' || input.toLowerCase() === 'yes') {
         setAwaitingApproval(false);
-        // Execute the pending plan
         if (pendingPlan) {
           await executeTask(pendingPlan);
           setPendingPlan(null);
@@ -119,12 +117,10 @@ Format your response clearly with headers.`;
 
       const result = await runClaude(planPrompt, mode);
 
-      // Mark orchestrator done, detect other agents
       const mentioned = detectMentionedAgents(result.response);
       setCompletedAgents(['Orchestrator', ...mentioned]);
       setActiveAgent(undefined);
 
-      // Add plan message
       const planMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'agent',
@@ -135,12 +131,10 @@ Format your response clearly with headers.`;
       };
       setMessages(prev => [...prev, planMessage]);
 
-      // Update tokens
       if (result.tokens) {
         setTotalTokens(prev => prev + result.tokens.input + result.tokens.output);
       }
 
-      // Ask for approval
       setPendingPlan(input);
       setAwaitingApproval(true);
       addSystemMessage('Execute this plan? (y/n)');
@@ -203,7 +197,7 @@ Format your response clearly with headers.`;
 
   // Handle slash commands
   const handleCommand = (cmd: string) => {
-    const [command, ...args] = cmd.slice(1).split(' ');
+    const [command] = cmd.slice(1).split(' ');
 
     switch (command) {
       case 'exit':
@@ -287,18 +281,18 @@ Ctrl+U    - Clear input line`,
     }
   });
 
-  // Prepare items for Static (include banner as first item)
+  // Prepare items for Static (include welcome box as first item)
   const staticItems = messages.length === 0
-    ? [{ id: 'banner', isBanner: true, role: 'system' as const, content: '', timestamp: new Date() }]
+    ? [{ id: 'welcome', isWelcome: true, role: 'system' as const, content: '', timestamp: new Date() }]
     : messages;
 
   return (
     <Box flexDirection="column">
-      {/* Static chat history with banner */}
+      {/* Static chat history with welcome box */}
       <Static items={staticItems}>
         {(item) => {
-          if ('isBanner' in item && item.isBanner) {
-            return <Banner key="banner" version={version} />;
+          if ('isWelcome' in item && item.isWelcome) {
+            return <WelcomeBox key="welcome" version={version} mode={mode} />;
           }
           return (
             <ChatMessage
@@ -324,26 +318,21 @@ Ctrl+U    - Clear input line`,
         </Box>
       )}
 
-      {/* Input */}
+      {/* Input with borders */}
       <Input
         onSubmit={handleSubmit}
         disabled={isProcessing}
-        placeholder={awaitingApproval ? "Execute plan? (y/n)" : "Type a message or /help for commands..."}
+        placeholder={awaitingApproval ? "Execute plan? (y/n)" : 'Try "build a password validator"'}
       />
 
-      {/* Agent panel - always visible */}
-      <AgentPanel
-        mode={mode}
-        activeAgent={activeAgent}
-        completedAgents={completedAgents}
-      />
-
-      {/* Status bar */}
+      {/* Status bar with agent boxes */}
       <StatusBar
         mode={mode}
         tokens={totalTokens}
         startTime={startTime}
         isProcessing={isProcessing}
+        activeAgent={activeAgent}
+        completedAgents={completedAgents}
       />
     </Box>
   );

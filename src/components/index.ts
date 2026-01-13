@@ -1,5 +1,6 @@
 export { App } from './App.js';
 export { Banner } from './Banner.js';
+export { WelcomeBox } from './WelcomeBox.js';
 export { ChatMessage } from './ChatMessage.js';
 export { Input } from './Input.js';
 export { StatusBar } from './StatusBar.js';
