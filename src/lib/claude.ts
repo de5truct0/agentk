@@ -10,7 +10,8 @@ interface ClaudeResult {
 
 export async function runClaude(
   prompt: string,
-  mode: 'dev' | 'ml'
+  mode: 'dev' | 'ml',
+  autoAccept: boolean = false
 ): Promise<ClaudeResult> {
   const systemPrompt = getSystemPrompt(mode);
 
@@ -18,6 +19,7 @@ export async function runClaude(
     const args = [
       '--print',
       '--output-format', 'json',
+      ...(autoAccept ? ['--dangerously-skip-permissions'] : []),
       '--system-prompt', systemPrompt,
       prompt,
     ];

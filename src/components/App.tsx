@@ -38,6 +38,7 @@ export const App: React.FC<AppProps> = ({ mode, version }) => {
   const [completedAgents, setCompletedAgents] = useState<AgentName[]>([]);
   const [pendingPlan, setPendingPlan] = useState<string | null>(null);
   const [awaitingApproval, setAwaitingApproval] = useState(false);
+  const [autoAccept, setAutoAccept] = useState(false);
 
   // Detect agents mentioned in response
   const detectMentionedAgents = (content: string): AgentName[] => {
@@ -119,7 +120,7 @@ Respond with:
 
 Format your response clearly with headers.`;
 
-      const result = await runClaude(planPrompt, mode);
+      const result = await runClaude(planPrompt, mode, autoAccept);
 
       const mentioned = detectMentionedAgents(result.response);
       setCompletedAgents(['Orchestrator', ...mentioned]);
@@ -160,7 +161,7 @@ Format your response clearly with headers.`;
     setError(null);
 
     try {
-      const result = await runClaude(input, mode);
+      const result = await runClaude(input, mode, autoAccept);
 
       const mentioned = detectMentionedAgents(result.response);
       setCompletedAgents(['Orchestrator', ...mentioned]);
@@ -278,10 +279,18 @@ Ctrl+U    - Clear input line`,
     }
   };
 
-  // Handle Ctrl+C
+  // Handle keyboard shortcuts
   useInput((input, key) => {
     if (key.ctrl && input === 'c') {
       exit();
+    }
+    // Shift+Tab to toggle auto-accept
+    if (key.shift && key.tab) {
+      setAutoAccept(prev => {
+        const newValue = !prev;
+        addSystemMessage(newValue ? 'Auto-accept enabled (edits will be applied automatically)' : 'Auto-accept disabled');
+        return newValue;
+      });
     }
   });
 
@@ -337,6 +346,7 @@ Ctrl+U    - Clear input line`,
         isProcessing={isProcessing}
         activeAgent={activeAgent}
         completedAgents={completedAgents}
+        autoAccept={autoAccept}
       />
     </Box>
   );

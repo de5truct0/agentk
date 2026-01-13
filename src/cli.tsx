@@ -5,7 +5,7 @@ import meow from 'meow';
 import { App } from './components/App.js';
 import { checkClaudeInstalled } from './lib/claude.js';
 
-const VERSION = '2.2.4';
+const VERSION = '2.2.5';
 
 const cli = meow(`
   Usage

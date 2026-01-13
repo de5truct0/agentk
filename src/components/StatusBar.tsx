@@ -10,6 +10,7 @@ interface StatusBarProps {
   isProcessing?: boolean;
   activeAgent?: AgentName;
   completedAgents?: AgentName[];
+  autoAccept?: boolean;
 }
 
 // Theme
@@ -42,6 +43,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   isProcessing = false,
   activeAgent,
   completedAgents = [],
+  autoAccept = false,
 }) => {
   const [elapsed, setElapsed] = useState('');
   const [spinnerFrame, setSpinnerFrame] = useState(0);
@@ -121,6 +123,13 @@ export const StatusBar: React.FC<StatusBarProps> = ({
 
       <Text color={theme.border}> │ </Text>
       <Text color={theme.dim}>? help</Text>
+
+      {autoAccept && (
+        <>
+          <Text color={theme.border}> │ </Text>
+          <Text color={theme.active}>AUTO</Text>
+        </>
+      )}
 
       {isProcessing && (
         <>
