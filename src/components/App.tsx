@@ -137,8 +137,8 @@ Ctrl+A/E  - Jump to start/end`,
 
   return (
     <Box flexDirection="column">
-      {/* Banner - rendered once at top */}
-      <Banner version={version} />
+      {/* Banner - only show when no messages (initial state) */}
+      {messages.length === 0 && <Banner version={version} />}
 
       {/* Static chat history - won't re-render/scroll */}
       <Static items={messages}>
