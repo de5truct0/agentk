@@ -64,7 +64,8 @@ export const App: React.FC<AppProps> = ({ mode, version }) => {
 
     // Handle approval response
     if (awaitingApproval) {
-      if (input.toLowerCase() === 'y' || input.toLowerCase() === 'yes') {
+      // Enter (empty input) = approve
+      if (input.trim() === '') {
         setAwaitingApproval(false);
         if (pendingPlan) {
           await executeTask(pendingPlan);
@@ -77,6 +78,9 @@ export const App: React.FC<AppProps> = ({ mode, version }) => {
         addSystemMessage('Plan cancelled. What would you like to do instead?');
         return;
       }
+      // Any other input cancels and starts new request
+      setAwaitingApproval(false);
+      setPendingPlan(null);
     }
 
     // Add user message
@@ -137,7 +141,7 @@ Format your response clearly with headers.`;
 
       setPendingPlan(input);
       setAwaitingApproval(true);
-      addSystemMessage('Execute this plan? (y/n)');
+      addSystemMessage('Press Enter to execute, or type "n" to cancel');
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
@@ -322,7 +326,7 @@ Ctrl+U    - Clear input line`,
       <Input
         onSubmit={handleSubmit}
         disabled={isProcessing}
-        placeholder={awaitingApproval ? "Execute plan? (y/n)" : 'Try "build a password validator"'}
+        placeholder={awaitingApproval ? "Press Enter to execute, n to cancel" : 'Try "build a password validator"'}
       />
 
       {/* Status bar with agent boxes */}
