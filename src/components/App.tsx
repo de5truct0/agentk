@@ -39,6 +39,7 @@ export const App: React.FC<AppProps> = ({ mode, version }) => {
   const [pendingPlan, setPendingPlan] = useState<string | null>(null);
   const [awaitingApproval, setAwaitingApproval] = useState(false);
   const [autoAccept, setAutoAccept] = useState(false);
+  const [pendingAutoAccept, setPendingAutoAccept] = useState(false);
 
   // Detect agents mentioned in response
   const detectMentionedAgents = (content: string): AgentName[] => {
@@ -61,6 +62,18 @@ export const App: React.FC<AppProps> = ({ mode, version }) => {
     if (input.startsWith('/')) {
       handleCommand(input);
       return;
+    }
+
+    // Handle auto-accept confirmation
+    if (pendingAutoAccept) {
+      if (input.trim() === '') {
+        // Enter = confirm auto-accept
+        setAutoAccept(true);
+        setPendingAutoAccept(false);
+        return;
+      }
+      // Any other input = cancel and process as normal input
+      setPendingAutoAccept(false);
     }
 
     // Handle approval response
@@ -286,11 +299,13 @@ Ctrl+U    - Clear input line`,
     }
     // Shift+Tab to toggle auto-accept
     if (key.shift && key.tab) {
-      setAutoAccept(prev => {
-        const newValue = !prev;
-        addSystemMessage(newValue ? 'Auto-accept enabled (edits will be applied automatically)' : 'Auto-accept disabled');
-        return newValue;
-      });
+      if (autoAccept) {
+        // Disable silently
+        setAutoAccept(false);
+      } else {
+        // Show confirmation prompt
+        setPendingAutoAccept(true);
+      }
     }
   });
 
@@ -335,7 +350,7 @@ Ctrl+U    - Clear input line`,
       <Input
         onSubmit={handleSubmit}
         disabled={isProcessing}
-        placeholder={awaitingApproval ? "Press Enter to execute, n to cancel" : 'Try "build a password validator"'}
+        placeholder={pendingAutoAccept ? "Auto-accept: edits applied without asking. Enter to confirm" : awaitingApproval ? "Press Enter to execute, n to cancel" : 'Try "build a password validator"'}
       />
 
       {/* Status bar with agent boxes */}
