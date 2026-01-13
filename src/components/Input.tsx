@@ -5,6 +5,7 @@ import { Box, Text, useInput } from 'ink';
 const theme = {
   accent: '#4fd1c5',
   dim: '#4a5568',
+  suggestion: '#718096',
 };
 
 interface InputProps {
@@ -13,6 +14,9 @@ interface InputProps {
   prefix?: string;
   disabled?: boolean;
 }
+
+// Available commands for autocomplete
+const COMMANDS = ['/help', '/status', '/clear', '/exit', '/mode'];
 
 // Store history globally so it persists across re-renders
 const commandHistory: string[] = [];
@@ -28,6 +32,17 @@ export const Input: React.FC<InputProps> = ({
   const [cursorPosition, setCursorPosition] = useState(0);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [tempValue, setTempValue] = useState(''); // Store current input when browsing history
+  const [tabIndex, setTabIndex] = useState(0); // For cycling through completions
+
+  // Get autocomplete suggestion
+  const getSuggestion = (): string => {
+    if (!value.startsWith('/') || value.length < 1) return '';
+    const matches = COMMANDS.filter(cmd => cmd.startsWith(value.toLowerCase()));
+    if (matches.length === 0) return '';
+    return matches[0].slice(value.length);
+  };
+
+  const suggestion = getSuggestion();
 
   useInput((input, key) => {
     if (disabled) return;
@@ -102,10 +117,27 @@ export const Input: React.FC<InputProps> = ({
     } else if (key.ctrl && input === 'e') {
       // Go to end
       setCursorPosition(value.length);
+    } else if (key.tab) {
+      // Tab completion
+      if (suggestion) {
+        const completed = value + suggestion;
+        setValue(completed);
+        setCursorPosition(completed.length);
+      } else if (value.startsWith('/')) {
+        // Cycle through matching commands
+        const matches = COMMANDS.filter(cmd => cmd.startsWith(value.toLowerCase()));
+        if (matches.length > 0) {
+          const nextIndex = (tabIndex + 1) % matches.length;
+          setTabIndex(nextIndex);
+          setValue(matches[nextIndex]);
+          setCursorPosition(matches[nextIndex].length);
+        }
+      }
     } else if (!key.ctrl && !key.meta && input) {
       setValue(prev => prev.slice(0, cursorPosition) + input + prev.slice(cursorPosition));
       setCursorPosition(pos => pos + input.length);
       setHistoryIndex(-1); // Reset history navigation on edit
+      setTabIndex(0); // Reset tab completion cycle
     }
   });
 
@@ -124,6 +156,9 @@ export const Input: React.FC<InputProps> = ({
           <Text>{beforeCursor}</Text>
           <Text inverse>{atCursor}</Text>
           <Text>{afterCursor}</Text>
+          {suggestion && cursorPosition === value.length && (
+            <Text color={theme.suggestion}>{suggestion}</Text>
+          )}
         </>
       )}
       {disabled && <Text color={theme.dim}> processing...</Text>}

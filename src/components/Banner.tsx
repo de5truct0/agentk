@@ -19,6 +19,14 @@ export const Banner: React.FC<BannerProps> = ({ version }) => {
   const termWidth = process.stdout.columns || 80;
   const w = termWidth;
 
+  // Calculate widths properly
+  const tagline = 'Multi-Agent System';
+  const versionStr = ` v${version}`;
+  const prefixLen = 25;
+  const usedWidth = prefixLen + tagline.length + versionStr.length;
+  const remainingSpace = Math.max(0, w - usedWidth - 2);
+  const dashes = remainingSpace > 0 ? ' ' + '─'.repeat(remainingSpace) + ' ' : ' ';
+
   return (
     <Box flexDirection="column" marginBottom={1}>
       {/* Minimal top accent */}
@@ -37,9 +45,9 @@ export const Banner: React.FC<BannerProps> = ({ version }) => {
         <Text color={theme.border}>{' ─── '}</Text>
         <Text color={theme.dim}>{'◇'}</Text>
         <Text color={theme.border}>{' ─ '}</Text>
-        <Text color={theme.dim} italic>{w >= 80 ? 'Multi-Agent Intelligence System' : 'Multi-Agent System'}</Text>
-        <Text color={theme.border}>{' ─'.repeat(Math.max(1, Math.floor((w - (w >= 80 ? 58 : 48)) / 2)))}</Text>
-        <Text color={theme.dim}> v{version}</Text>
+        <Text color={theme.dim} italic>{tagline}</Text>
+        <Text color={theme.border}>{dashes}</Text>
+        <Text color={theme.dim}>{versionStr}</Text>
       </Box>
 
       {/* Subtle bottom line */}
