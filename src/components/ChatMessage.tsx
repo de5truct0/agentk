@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Text } from 'ink';
 
 interface ChatMessageProps {
-  role: 'user' | 'agent';
+  role: 'user' | 'agent' | 'system';
   agentName?: string;
   content: string;
   tokens?: { input: number; output: number };
@@ -18,6 +18,7 @@ const theme = {
   dim: '#4a5568',
   user: '#9f7aea',      // Purple for user
   agent: '#4fd1c5',     // Teal for agent
+  system: '#f6e05e',    // Yellow for system
 };
 
 export const ChatMessage: React.FC<ChatMessageProps> = ({
@@ -27,7 +28,8 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   tokens,
 }) => {
   const isUser = role === 'user';
-  const symbolColor = isUser ? theme.user : theme.agent;
+  const isSystem = role === 'system';
+  const symbolColor = isUser ? theme.user : isSystem ? theme.system : theme.agent;
   const title = isUser ? 'You' : agentName;
 
   const termWidth = process.stdout.columns || 80;

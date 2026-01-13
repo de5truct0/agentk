@@ -5,3 +5,6 @@ export { Input } from './Input.js';
 export { StatusBar } from './StatusBar.js';
 export { ThinkingIndicator } from './ThinkingIndicator.js';
 export { RetroBox } from './Box.js';
+export { AgentStatus } from './AgentStatus.js';
+export { AgentPanel } from './AgentPanel.js';
+export type { AgentName, AgentState } from './AgentPanel.js';

@@ -16,7 +16,7 @@ interface InputProps {
 }
 
 // Available commands for autocomplete
-const COMMANDS = ['/help', '/status', '/clear', '/exit', '/mode'];
+const COMMANDS = ['/help', '/status', '/clear', '/exit', '/plan', '/auto', '/mode', '/agents'];
 
 // Store history globally so it persists across re-renders
 const commandHistory: string[] = [];

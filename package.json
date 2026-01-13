@@ -1,6 +1,6 @@
 {
   "name": "agentk8",
-  "version": "2.1.4",
+  "version": "2.2.0",
   "description": "Multi-Agent Claude Code Terminal Suite",
   "type": "module",
   "main": "dist/index.js",
