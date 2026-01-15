@@ -3,14 +3,20 @@ import { Box, Text } from 'ink';
 import { icons } from '../themes/retro.js';
 import { AgentName } from './AgentPanel.js';
 
+type CouncilMode = 'solo' | 'council' | 'off';
+
 interface StatusBarProps {
   mode: 'dev' | 'ml';
+  executionMode: 'plan' | 'auto';
   tokens: number;
   startTime: Date;
   isProcessing?: boolean;
   activeAgent?: AgentName;
   completedAgents?: AgentName[];
   autoAccept?: boolean;
+  councilMode?: CouncilMode;
+  councilStage?: string | null;
+  availableModels?: Record<string, boolean>;
 }
 
 // Theme
@@ -36,14 +42,25 @@ const agentIcons: Record<string, string> = {
   Evaluator: '^',
 };
 
+// Model icons for council mode
+const modelIcons: Record<string, string> = {
+  gpt: 'G',
+  gemini: 'M',
+  claude: 'C',
+};
+
 export const StatusBar: React.FC<StatusBarProps> = ({
   mode,
+  executionMode,
   tokens,
   startTime,
   isProcessing = false,
   activeAgent,
   completedAgents = [],
   autoAccept = false,
+  councilMode = 'off',
+  councilStage = null,
+  availableModels = {},
 }) => {
   const [elapsed, setElapsed] = useState('');
   const [spinnerFrame, setSpinnerFrame] = useState(0);
@@ -100,55 +117,106 @@ export const StatusBar: React.FC<StatusBarProps> = ({
     return theme.dim;
   };
 
+  // Get stage label for council mode
+  const getStageLabel = () => {
+    if (!councilStage) return null;
+    const stages: Record<string, string> = {
+      'scout': 'Scout',
+      'stage1': '1/3',
+      'stage2': '2/3',
+      'stage3': '3/3',
+    };
+    return stages[councilStage] || councilStage;
+  };
+
   return (
-    <Box>
-      <Text color={theme.dim}>  </Text>
-      <Text color={theme.accent}>{modeLabel}</Text>
-      <Text color={theme.border}> │ </Text>
+    <Box flexDirection="row" justifyContent="space-between" width="100%">
+      {/* Left side content */}
+      <Box>
+        <Text color={theme.dim}>  </Text>
+        <Text color={theme.accent}>{modeLabel}</Text>
+        <Text color={theme.border}> │ </Text>
+        <Text color={executionMode === 'auto' ? theme.active : theme.accent}>
+          {executionMode.toUpperCase()}
+        </Text>
+        <Text color={theme.border}> │ </Text>
 
-      {/* Agent boxes */}
-      {modeAgents.map((agent, i) => {
-        const isActive = activeAgent === agent;
-        const leftBracket = isActive ? pulseBrackets[pulseFrame] : '[';
-        const rightBracket = isActive ? pulseBrackets[(pulseFrame + 3) % pulseBrackets.length] === '<' ? '>' : pulseBrackets[(pulseFrame + 3) % pulseBrackets.length] === '{' ? '}' : pulseBrackets[(pulseFrame + 3) % pulseBrackets.length] === '(' ? ')' : ']' : ']';
-        return (
-          <React.Fragment key={agent}>
-            <Text color={getAgentColor(agent)}>{leftBracket}</Text>
-            <Text color={getAgentColor(agent)}>{agentIcons[agent]}</Text>
-            <Text color={getAgentColor(agent)}>{rightBracket}</Text>
-            {i < modeAgents.length - 1 && <Text color={theme.dim}> </Text>}
-          </React.Fragment>
-        );
-      })}
+        {/* Council mode: show model boxes */}
+        {councilMode !== 'off' ? (
+          <>
+            {Object.entries(modelIcons).map(([model, icon], i) => {
+              const isAvailable = availableModels[model];
+              const color = isAvailable ? theme.done : theme.dim;
+              return (
+                <React.Fragment key={model}>
+                  <Text color={color}>[</Text>
+                  <Text color={color}>{icon}</Text>
+                  <Text color={color}>]</Text>
+                  {i < Object.keys(modelIcons).length - 1 && <Text color={theme.dim}> </Text>}
+                </React.Fragment>
+              );
+            })}
+            {councilStage && (
+              <>
+                <Text color={theme.border}> │ </Text>
+                <Text color={theme.active}>Stage {getStageLabel()}</Text>
+              </>
+            )}
+          </>
+        ) : (
+          /* Agent boxes (standard mode) */
+          modeAgents.map((agent, i) => {
+            const isActive = activeAgent === agent;
+            const leftBracket = isActive ? pulseBrackets[pulseFrame] : '[';
+            const rightBracket = isActive ? pulseBrackets[(pulseFrame + 3) % pulseBrackets.length] === '<' ? '>' : pulseBrackets[(pulseFrame + 3) % pulseBrackets.length] === '{' ? '}' : pulseBrackets[(pulseFrame + 3) % pulseBrackets.length] === '(' ? ')' : ']' : ']';
+            return (
+              <React.Fragment key={agent}>
+                <Text color={getAgentColor(agent)}>{leftBracket}</Text>
+                <Text color={getAgentColor(agent)}>{agentIcons[agent]}</Text>
+                <Text color={getAgentColor(agent)}>{rightBracket}</Text>
+                {i < modeAgents.length - 1 && <Text color={theme.dim}> </Text>}
+              </React.Fragment>
+            );
+          })
+        )}
 
-      <Text color={theme.border}> │ </Text>
-      <Text color={theme.dim}>? help</Text>
+        <Text color={theme.border}> │ </Text>
+        <Text color={theme.dim}>? help</Text>
 
-      {autoAccept && (
-        <>
-          <Text color={theme.border}> │ </Text>
-          <Text color={theme.active}>AUTO</Text>
-        </>
-      )}
+        {councilMode !== 'off' && (
+          <>
+            <Text color={theme.border}> │ </Text>
+            <Text color={theme.highlight}>{councilMode === 'council' ? 'COUNCIL' : 'SOLO'}</Text>
+          </>
+        )}
 
-      {isProcessing && (
-        <>
-          <Text color={theme.border}> │ </Text>
-          <Text color={theme.highlight}>{icons.spinner[spinnerFrame]}</Text>
-        </>
-      )}
+        {autoAccept && (
+          <>
+            <Text color={theme.border}> │ </Text>
+            <Text color={theme.active}>FAST</Text>
+          </>
+        )}
 
-      {elapsed && (
-        <>
-          <Text color={theme.border}> │ </Text>
-          <Text color={theme.dim}>{elapsed}</Text>
-        </>
-      )}
+        {isProcessing && (
+          <>
+            <Text color={theme.border}> │ </Text>
+            <Text color={theme.highlight}>{icons.spinner[spinnerFrame]}</Text>
+          </>
+        )}
+
+        {elapsed && (
+          <>
+            <Text color={theme.border}> │ </Text>
+            <Text color={theme.dim}>{elapsed}</Text>
+          </>
+        )}
+      </Box>
 
       {/* Right side - tokens */}
-      <Text color={theme.dim}>{'  '.repeat(3)}</Text>
-      <Text color={theme.accent}>↑ {formatTokens(tokens)}</Text>
-      <Text color={theme.dim}> tokens</Text>
+      <Box>
+        <Text color={theme.accent}>↑ {formatTokens(tokens)}</Text>
+        <Text color={theme.dim}> tokens </Text>
+      </Box>
     </Box>
   );
 };

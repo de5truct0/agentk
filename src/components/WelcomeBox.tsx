@@ -7,22 +7,22 @@ interface WelcomeBoxProps {
 }
 
 const theme = {
-  border: '#4a5568',
-  accent: '#4fd1c5',
-  highlight: '#81e6d9',
+  border: '#2d3748',    // gray-800
+  accent: '#a0aec0',    // gray-400
+  highlight: '#e2e8f0', // gray-200
   dim: '#718096',
-  text: '#e2e8f0',
-  title: '#f6e05e',
-  koi1: '#f6ad55',  // orange koi
-  koi2: '#e2e8f0',  // white koi
-  water: '#4299e1', // blue water
+  text: '#cbd5e0',
+  title: '#718096',     // gray-500
+  c1: '#a0aec0',       // gray-400
+  c2: '#4a5568',       // gray-700
+  c3: '#63b3ed',       // blue-400 (eye)
 };
 
 export const WelcomeBox: React.FC<WelcomeBoxProps> = ({ version, mode }) => {
   const termWidth = Math.min(process.stdout.columns || 120, 120);
   const boxWidth = termWidth - 4;
-  const leftWidth = Math.floor(boxWidth * 0.45);
-  const rightWidth = boxWidth - leftWidth - 3;
+  const leftWidth = Math.floor(boxWidth * 0.55);
+  const rightWidth = boxWidth - leftWidth - 1;
 
   const modeLabel = mode === 'dev' ? 'Software Development' : 'ML Research';
 
@@ -51,59 +51,44 @@ export const WelcomeBox: React.FC<WelcomeBoxProps> = ({ version, mode }) => {
       {/* Top border with title */}
       <Box>
         <Text color={theme.border}>╭</Text>
-        <Text color={theme.border}>{'─'.repeat(titlePadLeft - 1)}</Text>
+        <Text color={theme.border}>{'─'.repeat(titlePadLeft)}</Text>
         <Text color={theme.title} bold>{titleText}</Text>
-        <Text color={theme.border}>{'─'.repeat(titlePadRight - 1)}</Text>
+        <Text color={theme.border}>{'─'.repeat(titlePadRight)}</Text>
         <Text color={theme.border}>╮</Text>
       </Box>
 
-      {/* Content rows */}
-      <Box>
+      {/* Content Area */}
+      <Box flexDirection="row">
         <Text color={theme.border}>│</Text>
-        <Text>{' '.repeat(boxWidth)}</Text>
-        <Text color={theme.border}>│</Text>
-      </Box>
 
-      {/* Koi fish row 1 - orange koi swimming right */}
-      <Box>
-        <Text color={theme.border}>│</Text>
-        <Box width={leftWidth} justifyContent="center">
-          <Text color={theme.water}>~</Text>
-          <Text color={theme.koi1}>{" ><((("}{"'"}{">  "}</Text>
+        {/* Left Column: Wolf Art - "Strength of the Pack" */}
+        <Box width={leftWidth} justifyContent="center" alignItems="center" flexDirection="column">
+          <Text color={theme.c1}>
+            {`
+ ___________________        ____....-----....____
+(________________LL_)   ==============================
+    ______\\   \\_______.--'.  \`---..._____...---'
+    \`-------..__            \` ,/
+                \`-._ -  -  - |
+                    \`-------'`}
+          </Text>
         </Box>
-        <Text color={theme.border}>│</Text>
-        <Box width={rightWidth} paddingLeft={1}>
-          <Text color={theme.text}>Welcome to </Text>
-          <Text color={theme.accent} bold>AGENT-K</Text>
-        </Box>
-        <Text color={theme.border}>│</Text>
-      </Box>
 
-      {/* Koi fish row 2 - water */}
-      <Box>
         <Text color={theme.border}>│</Text>
-        <Box width={leftWidth} justifyContent="center">
-          <Text color={theme.water}>{"    ~  ~    "}</Text>
-        </Box>
-        <Text color={theme.border}>│</Text>
-        <Box width={rightWidth} paddingLeft={1}>
-          <Text color={theme.dim}>Multi-Agent Intelligence System</Text>
-        </Box>
-        <Text color={theme.border}>│</Text>
-      </Box>
 
-      {/* Koi fish row 3 - white koi swimming left */}
-      <Box>
-        <Text color={theme.border}>│</Text>
-        <Box width={leftWidth} justifyContent="center">
-          <Text color={theme.koi2}>{"  <"}{"'"}{")))><"}</Text>
-          <Text color={theme.water}> ~</Text>
+        {/* Right Column: Info */}
+        <Box width={rightWidth} flexDirection="column" justifyContent="center" paddingLeft={2}>
+          <Box marginBottom={1}>
+            <Text color={theme.text}>Welcome to </Text>
+            <Text color={theme.accent} bold>AGENT-K</Text>
+          </Box>
+          <Text color={theme.dim}>Pack Intelligence System</Text>
+          <Box marginTop={1}>
+            <Text color={theme.dim}>Mode: </Text>
+            <Text color={theme.highlight}>{modeLabel}</Text>
+          </Box>
         </Box>
-        <Text color={theme.border}>│</Text>
-        <Box width={rightWidth} paddingLeft={1}>
-          <Text color={theme.dim}>Mode: </Text>
-          <Text color={theme.highlight}>{modeLabel}</Text>
-        </Box>
+
         <Text color={theme.border}>│</Text>
       </Box>
 
