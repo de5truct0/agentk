@@ -19,7 +19,127 @@ const theme = {
   user: '#9f7aea',      // Purple for user
   agent: '#4fd1c5',     // Teal for agent
   system: '#f6e05e',    // Yellow for system
+  code: '#f6ad55',      // Orange for inline code
+  header: '#63b3ed',    // Blue for headers
 };
+
+// Parse inline markdown and return React elements
+function parseInlineMarkdown(text: string, defaultColor: string): React.ReactNode[] {
+  const elements: React.ReactNode[] = [];
+  let remaining = text;
+  let key = 0;
+
+  while (remaining.length > 0) {
+    // Check for bold **text**
+    const boldMatch = remaining.match(/^\*\*(.+?)\*\*/);
+    if (boldMatch) {
+      elements.push(<Text key={key++} color={defaultColor} bold>{boldMatch[1]}</Text>);
+      remaining = remaining.slice(boldMatch[0].length);
+      continue;
+    }
+
+    // Check for inline code `code`
+    const codeMatch = remaining.match(/^`([^`]+)`/);
+    if (codeMatch) {
+      elements.push(<Text key={key++} color={theme.code}>{codeMatch[1]}</Text>);
+      remaining = remaining.slice(codeMatch[0].length);
+      continue;
+    }
+
+    // Check for italic *text* or _text_
+    const italicMatch = remaining.match(/^(\*|_)([^*_]+)\1/);
+    if (italicMatch) {
+      elements.push(<Text key={key++} color={defaultColor} italic>{italicMatch[2]}</Text>);
+      remaining = remaining.slice(italicMatch[0].length);
+      continue;
+    }
+
+    // Find next special character
+    const nextSpecial = remaining.search(/[\*`_]/);
+    if (nextSpecial === -1) {
+      // No more special chars, add rest as plain text
+      elements.push(<Text key={key++} color={defaultColor}>{remaining}</Text>);
+      break;
+    } else if (nextSpecial === 0) {
+      // Special char at start but didn't match pattern - treat as literal
+      elements.push(<Text key={key++} color={defaultColor}>{remaining[0]}</Text>);
+      remaining = remaining.slice(1);
+    } else {
+      // Add text before special char
+      elements.push(<Text key={key++} color={defaultColor}>{remaining.slice(0, nextSpecial)}</Text>);
+      remaining = remaining.slice(nextSpecial);
+    }
+  }
+
+  return elements;
+}
+
+// Render a single line with markdown formatting
+function renderLine(line: string, index: number, defaultColor: string): React.ReactNode {
+  // Header detection (## Header)
+  const headerMatch = line.match(/^(#{1,3})\s+(.+)$/);
+  if (headerMatch) {
+    const level = headerMatch[1].length;
+    const content = headerMatch[2];
+    return (
+      <Box key={index}>
+        <Text color={theme.header} bold>{content}</Text>
+      </Box>
+    );
+  }
+
+  // List item detection (- item or * item)
+  const listMatch = line.match(/^(\s*)([-*])\s+(.+)$/);
+  if (listMatch) {
+    const indent = listMatch[1];
+    const content = listMatch[3];
+    return (
+      <Box key={index}>
+        <Text color={defaultColor}>{indent}• </Text>
+        {parseInlineMarkdown(content, defaultColor)}
+      </Box>
+    );
+  }
+
+  // Numbered list detection (1. item)
+  const numberedMatch = line.match(/^(\s*)(\d+)\.\s+(.+)$/);
+  if (numberedMatch) {
+    const indent = numberedMatch[1];
+    const num = numberedMatch[2];
+    const content = numberedMatch[3];
+    return (
+      <Box key={index}>
+        <Text color={defaultColor}>{indent}{num}. </Text>
+        {parseInlineMarkdown(content, defaultColor)}
+      </Box>
+    );
+  }
+
+  // Table row detection (| col | col |)
+  if (line.includes('|') && (line.trim().startsWith('|') || line.includes(' | '))) {
+    // Keep table formatting as-is but with subtle styling
+    const isSeparator = line.match(/^[\s|:-]+$/);
+    if (isSeparator) {
+      return (
+        <Box key={index}>
+          <Text color={theme.dim}>{line}</Text>
+        </Box>
+      );
+    }
+    return (
+      <Box key={index}>
+        <Text color={defaultColor}>{line}</Text>
+      </Box>
+    );
+  }
+
+  // Regular line with inline markdown
+  return (
+    <Box key={index}>
+      {parseInlineMarkdown(line, defaultColor)}
+    </Box>
+  );
+}
 
 export const ChatMessage: React.FC<ChatMessageProps> = ({
   role,
@@ -31,10 +151,12 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   const isSystem = role === 'system';
   const symbolColor = isUser ? theme.user : isSystem ? theme.system : theme.agent;
   const title = isUser ? 'You' : agentName;
+  const textColor = theme.text;
 
   const termWidth = process.stdout.columns || 80;
   const contentWidth = termWidth - 6;
 
+  // Split content into lines and wrap long lines
   const lines = wrapText(content, contentWidth);
 
   return (
@@ -45,11 +167,9 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
         <Text color={symbolColor} bold>{title}</Text>
       </Box>
 
-      {/* Content */}
+      {/* Content with markdown rendering */}
       <Box flexDirection="column" marginLeft={2}>
-        {lines.map((line, i) => (
-          <Text key={i} color={theme.text}>{line}</Text>
-        ))}
+        {lines.map((line, i) => renderLine(line, i, textColor))}
       </Box>
 
       {/* Token info */}
@@ -69,6 +189,12 @@ function wrapText(text: string, width: number): string[] {
   const paragraphs = text.split('\n');
 
   for (const para of paragraphs) {
+    // Don't wrap table lines or lines with special formatting
+    if (para.includes('|') || para.match(/^#{1,3}\s/) || para.match(/^[\s]*[-*]\s/) || para.match(/^[\s]*\d+\.\s/)) {
+      lines.push(para);
+      continue;
+    }
+
     if (para.length <= width) {
       lines.push(para);
     } else {

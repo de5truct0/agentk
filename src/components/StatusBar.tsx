@@ -17,6 +17,7 @@ interface StatusBarProps {
   councilMode?: CouncilMode;
   councilStage?: string | null;
   availableModels?: Record<string, boolean>;
+  showExitHint?: boolean;
 }
 
 // Theme
@@ -61,6 +62,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   councilMode = 'off',
   councilStage = null,
   availableModels = {},
+  showExitHint = false,
 }) => {
   const [elapsed, setElapsed] = useState('');
   const [spinnerFrame, setSpinnerFrame] = useState(0);
@@ -212,8 +214,14 @@ export const StatusBar: React.FC<StatusBarProps> = ({
         )}
       </Box>
 
-      {/* Right side - tokens */}
+      {/* Right side - exit hint + tokens */}
       <Box>
+        {showExitHint && (
+          <>
+            <Text color={theme.dim}>Press Esc again to exit</Text>
+            <Text color={theme.border}> │ </Text>
+          </>
+        )}
         <Text color={theme.accent}>↑ {formatTokens(tokens)}</Text>
         <Text color={theme.dim}> tokens </Text>
       </Box>

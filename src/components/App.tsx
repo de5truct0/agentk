@@ -9,6 +9,7 @@ import { AgentName } from './AgentPanel.js';
 import { runClaude } from '../lib/claude.js';
 import { runCouncil, checkCouncilAvailable, getAvailableModels, StageUpdate } from '../lib/council.js';
 import { Confirmation, ConfirmationOption } from './Confirmation.js';
+import { QuestionWizard, Question } from './QuestionWizard.js';
 
 interface Message {
   id: string;
@@ -30,7 +31,14 @@ type CouncilMode = 'solo' | 'council' | 'off';
 
 export const App: React.FC<AppProps> = ({ mode, version }) => {
   const { exit } = useApp();
-  const [messages, setMessages] = useState<Message[]>([]);
+  // Initialize with welcome message as permanent first item
+  const [messages, setMessages] = useState<Message[]>([{
+    id: 'welcome',
+    role: 'system',
+    content: '',
+    timestamp: new Date(),
+    isWelcome: true,
+  }]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStartTime, setProcessingStartTime] = useState<Date | null>(null);
   const [totalTokens, setTotalTokens] = useState(0);
@@ -50,6 +58,80 @@ export const App: React.FC<AppProps> = ({ mode, version }) => {
   const [councilAvailable, setCouncilAvailable] = useState(false);
   const [availableModels, setAvailableModels] = useState<Record<string, boolean>>({});
   const [councilStage, setCouncilStage] = useState<string | null>(null);
+  const [lastEscapeTime, setLastEscapeTime] = useState<number>(0);
+  const [showExitHint, setShowExitHint] = useState(false);
+  const [questionWizardState, setQuestionWizardState] = useState<{
+    questions: Question[];
+    originalInput: string;
+    onComplete: (answers: { header: string; answer: string }[]) => void;
+  } | null>(null);
+
+  // Clean orchestrator internal tags from response
+  const cleanOrchestratorTags = (response: string): string => {
+    let cleaned = response;
+
+    // Remove <thinking>...</thinking> blocks
+    cleaned = cleaned.replace(/<thinking>[\s\S]*?<\/thinking>/g, '');
+
+    // Remove <task_analysis>...</task_analysis> blocks (keep content inside)
+    cleaned = cleaned.replace(/<\/?task_analysis>/g, '');
+
+    // Remove <response>...</response> tags (keep content inside)
+    cleaned = cleaned.replace(/<\/?response>/g, '');
+
+    // Clean up multiple consecutive newlines
+    cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+
+    // Clean up leading/trailing whitespace
+    cleaned = cleaned.trim();
+
+    return cleaned;
+  };
+
+  // Parse questions from orchestrator response
+  const parseQuestions = (response: string): { questions: Question[]; cleanedResponse: string } => {
+    const questions: Question[] = [];
+    let cleanedResponse = response;
+
+    // Match <question header="...">...</question> blocks
+    const questionRegex = /<question\s+header="([^"]+)">\s*([\s\S]*?)\s*<options>\s*([\s\S]*?)\s*<\/options>\s*<\/question>/g;
+    let match;
+
+    while ((match = questionRegex.exec(response)) !== null) {
+      const header = match[1];
+      const questionText = match[2].trim();
+      const optionsBlock = match[3];
+
+      // Parse options
+      const optionRegex = /<option(?:\s+recommended="true")?>(.*?)<\/option>/g;
+      const options: { label: string; recommended?: boolean }[] = [];
+      let optionMatch;
+
+      while ((optionMatch = optionRegex.exec(optionsBlock)) !== null) {
+        const isRecommended = optionMatch[0].includes('recommended="true"');
+        options.push({
+          label: optionMatch[1].trim(),
+          recommended: isRecommended,
+        });
+      }
+
+      if (options.length > 0) {
+        questions.push({
+          header,
+          question: questionText,
+          options,
+        });
+      }
+
+      // Remove this question block from the response
+      cleanedResponse = cleanedResponse.replace(match[0], '').trim();
+    }
+
+    // Clean orchestrator internal tags from the remaining response
+    cleanedResponse = cleanOrchestratorTags(cleanedResponse);
+
+    return { questions, cleanedResponse };
+  };
 
   // Check council availability on mount
   useEffect(() => {
@@ -172,21 +254,25 @@ Respond with:
 1. Task Analysis (complexity, scope)
 2. Agents Required (list which specialists are needed)
 3. Step-by-Step Plan (numbered steps)
-4. Questions (if any clarification needed)
+4. Questions (if any clarification needed - use the XML question format)
 
 Format your response clearly with headers.`;
 
       const result = await runClaude(planPrompt, mode, autoAccept);
 
-      const mentioned = detectMentionedAgents(result.response);
+      // Check for questions in response
+      const { questions, cleanedResponse } = parseQuestions(result.response);
+
+      const mentioned = detectMentionedAgents(cleanedResponse || result.response);
       setCompletedAgents(['Orchestrator', ...mentioned]);
       setActiveAgent(undefined);
 
+      // Show the cleaned response (without question XML)
       const planMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'agent',
         agentName: 'Orchestrator',
-        content: result.response,
+        content: cleanedResponse || result.response,
         tokens: result.tokens,
         timestamp: new Date(),
       };
@@ -196,29 +282,59 @@ Format your response clearly with headers.`;
         setTotalTokens(prev => prev + result.tokens.input + result.tokens.output);
       }
 
-      setConfirmationState({
-        message: 'Do you want to execute this plan?',
-        options: [
-          { label: 'Yes, execute plan', value: 'yes', key: 'Enter' },
-          { label: 'No, cancel', value: 'no', key: 'Esc' },
-        ],
-        onSelect: (value) => {
-          setConfirmationState(null);
-          if (value === 'yes') {
-            executeTask(input);
-          } else {
+      // Stop processing BEFORE showing wizard/confirmation to prevent overlap
+      setIsProcessing(false);
+      setProcessingStartTime(null);
+
+      // If questions were found, show the wizard
+      if (questions.length > 0) {
+        setQuestionWizardState({
+          questions,
+          originalInput: input,
+          onComplete: async (answers) => {
+            setQuestionWizardState(null);
+            // Format answers as follow-up message
+            const answerText = answers.map(a => `- ${a.header}: ${a.answer}`).join('\n');
+            const followUp = `My answers:\n${answerText}\n\nPlease proceed with these choices.`;
+
+            // Add user message with answers
+            const userAnswer: Message = {
+              id: Date.now().toString(),
+              role: 'user',
+              content: followUp,
+              timestamp: new Date(),
+            };
+            setMessages(prev => [...prev, userAnswer]);
+
+            // Continue with the task including answers
+            await executeTask(`${input}\n\n${followUp}`);
+          },
+        });
+      } else {
+        // No questions, show plan approval
+        setConfirmationState({
+          message: 'Do you want to execute this plan?',
+          options: [
+            { label: 'Yes, execute plan', value: 'yes', key: 'Enter' },
+            { label: 'No, cancel', value: 'no', key: 'Esc' },
+          ],
+          onSelect: (value) => {
+            setConfirmationState(null);
+            if (value === 'yes') {
+              executeTask(input);
+            } else {
+              addSystemMessage('Plan cancelled.');
+            }
+          },
+          onCancel: () => {
+            setConfirmationState(null);
             addSystemMessage('Plan cancelled.');
-          }
-        },
-        onCancel: () => {
-          setConfirmationState(null);
-          addSystemMessage('Plan cancelled.');
-        },
-      });
+          },
+        });
+      }
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
       setIsProcessing(false);
       setProcessingStartTime(null);
     }
@@ -235,7 +351,10 @@ Format your response clearly with headers.`;
     try {
       const result = await runClaude(input, mode, autoAccept);
 
-      const mentioned = detectMentionedAgents(result.response);
+      // Check for questions in response
+      const { questions, cleanedResponse } = parseQuestions(result.response);
+
+      const mentioned = detectMentionedAgents(cleanedResponse || result.response);
       setCompletedAgents(['Orchestrator', ...mentioned]);
       setActiveAgent(undefined);
 
@@ -243,7 +362,7 @@ Format your response clearly with headers.`;
         id: (Date.now() + 1).toString(),
         role: 'agent',
         agentName: 'Orchestrator',
-        content: result.response,
+        content: cleanedResponse || result.response,
         tokens: result.tokens,
         timestamp: new Date(),
       };
@@ -252,9 +371,38 @@ Format your response clearly with headers.`;
       if (result.tokens) {
         setTotalTokens(prev => prev + result.tokens.input + result.tokens.output);
       }
+
+      // Stop processing BEFORE showing wizard to prevent overlap
+      setIsProcessing(false);
+      setProcessingStartTime(null);
+
+      // If questions were found, show the wizard
+      if (questions.length > 0) {
+        setQuestionWizardState({
+          questions,
+          originalInput: input,
+          onComplete: async (answers) => {
+            setQuestionWizardState(null);
+            // Format answers as follow-up message
+            const answerText = answers.map(a => `- ${a.header}: ${a.answer}`).join('\n');
+            const followUp = `My answers:\n${answerText}\n\nPlease proceed with these choices.`;
+
+            // Add user message with answers
+            const userAnswer: Message = {
+              id: Date.now().toString(),
+              role: 'user',
+              content: followUp,
+              timestamp: new Date(),
+            };
+            setMessages(prev => [...prev, userAnswer]);
+
+            // Continue with the task including answers
+            await executeTask(`${input}\n\n${followUp}`);
+          },
+        });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
       setIsProcessing(false);
       setProcessingStartTime(null);
     }
@@ -282,7 +430,14 @@ Format your response clearly with headers.`;
         exit();
         break;
       case 'clear':
-        setMessages([]);
+        // Keep welcome message, clear everything else
+        setMessages([{
+          id: 'welcome',
+          role: 'system',
+          content: '',
+          timestamp: new Date(),
+          isWelcome: true,
+        }]);
         setActiveAgent(undefined);
         setCompletedAgents([]);
         break;
@@ -378,7 +533,7 @@ Keyboard shortcuts:
 ↑/↓       - Browse command history
 Tab       - Autocomplete commands
 Shift+Tab - Toggle auto-accept edits
-Ctrl+C    - Exit
+Esc Esc   - Exit
 Ctrl+U    - Clear input line`,
           timestamp: new Date(),
         };
@@ -409,9 +564,22 @@ Ctrl+U    - Clear input line`,
 
   // Handle keyboard shortcuts
   useInput((input, key) => {
-    if (key.ctrl && input === 'c') {
-      exit();
+    // Double-escape to exit (like Claude Code)
+    if (key.escape) {
+      const now = Date.now();
+      if (now - lastEscapeTime < 500) {
+        // Double escape - exit
+        exit();
+      } else {
+        // First escape - show hint and record time
+        setLastEscapeTime(now);
+        if (!questionWizardState && !confirmationState) {
+          setShowExitHint(true);
+          setTimeout(() => setShowExitHint(false), 1500);
+        }
+      }
     }
+
     // Shift+Tab to toggle auto-accept
     if (key.shift && key.tab) {
       if (autoAccept) {
@@ -437,15 +605,10 @@ Ctrl+U    - Clear input line`,
     }
   });
 
-  // Prepare items for Static (include welcome box as first item)
-  const staticItems = messages.length === 0
-    ? [{ id: 'welcome', isWelcome: true, role: 'system' as const, content: '', timestamp: new Date() }]
-    : messages;
-
   return (
     <Box flexDirection="column">
-      {/* Static chat history with welcome box */}
-      <Static items={staticItems}>
+      {/* Static chat history - welcome is always first item */}
+      <Static items={messages}>
         {(item) => {
           if ('isWelcome' in item && item.isWelcome) {
             return <WelcomeBox key="welcome" version={version} mode={mode} />;
@@ -474,8 +637,18 @@ Ctrl+U    - Clear input line`,
         </Box>
       )}
 
-      {/* Input or Confirmation */}
-      {confirmationState ? (
+      {/* Input, Confirmation, or Question Wizard */}
+      {questionWizardState ? (
+        <QuestionWizard
+          key={`wizard-${questionWizardState.questions.map(q => q.header).join('-')}`}
+          questions={questionWizardState.questions}
+          onComplete={questionWizardState.onComplete}
+          onCancel={() => {
+            setQuestionWizardState(null);
+            addSystemMessage('Questions cancelled.');
+          }}
+        />
+      ) : confirmationState ? (
         <Confirmation
           message={confirmationState.message}
           options={confirmationState.options}
@@ -503,6 +676,7 @@ Ctrl+U    - Clear input line`,
         councilMode={councilMode}
         councilStage={councilStage}
         availableModels={availableModels}
+        showExitHint={showExitHint}
       />
     </Box>
   );

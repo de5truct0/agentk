@@ -125,7 +125,7 @@ export const WelcomeBox: React.FC<WelcomeBoxProps> = ({ version, mode }) => {
       <Box>
         <Text color={theme.border}>│</Text>
         <Box width={boxWidth} justifyContent="center">
-          <Text color={theme.dim}>/help for commands  ·  /plan or /auto to set mode  ·  Ctrl+C to exit</Text>
+          <Text color={theme.dim}>/help for commands  ·  /plan or /auto to set mode  ·  Esc Esc to exit</Text>
         </Box>
         <Text color={theme.border}>│</Text>
       </Box>
