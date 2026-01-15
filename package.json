@@ -1,6 +1,6 @@
 {
   "name": "agentk8",
-  "version": "2.3.4",
+  "version": "2.3.5",
   "description": "Multi-LLM Council Terminal Suite - Three-stage consensus with GPT, Gemini, and Claude",
   "type": "module",
   "main": "dist/index.js",

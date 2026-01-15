@@ -21,7 +21,7 @@ def print_banner():
     """Print the AGENT-K banner."""
     banner = """
     ╔═══════════════════════════════════════╗
-    ║     AGENT-K Council v2.3.4            ║
+    ║     AGENT-K Council v2.3.5            ║
     ║     Multi-LLM Consensus System        ║
     ╚═══════════════════════════════════════╝
     """
@@ -146,7 +146,7 @@ Examples:
     parser.add_argument(
         "--version", "-v",
         action="version",
-        version="AGENT-K Council v2.3.4"
+        version="AGENT-K Council v2.3.5"
     )
     
     args = parser.parse_args()

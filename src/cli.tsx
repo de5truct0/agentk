@@ -29,10 +29,14 @@ const cli = meow(`
     /exit     Exit AGENT-K
 
   Keyboard
-    Esc       Cancel current operation (when processing)
+    Esc       Cancel operation (when processing)
     Esc Esc   Exit (double-press when idle)
     Ctrl+U    Clear input line
-    Shift+Tab Toggle auto-edit mode
+
+  Modes (/normal, /plan, /auto)
+    normal    Execute, confirm edits (default)
+    plan      Plan first, then execute
+    auto      No confirmations
 `, {
   importMeta: import.meta,
   flags: {

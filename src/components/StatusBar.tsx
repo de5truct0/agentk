@@ -7,7 +7,7 @@ type CouncilMode = 'solo' | 'council' | 'off';
 
 interface StatusBarProps {
   mode: 'dev' | 'ml';
-  executionMode: 'plan' | 'auto';
+  executionMode: 'normal' | 'plan' | 'auto';
   tokens: number;
   startTime: Date;
   isProcessing?: boolean;
@@ -188,17 +188,12 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           </>
         )}
 
-        {executionMode === 'auto' && (
+        {executionMode !== 'normal' && (
           <>
             <Text color={theme.border}> │ </Text>
-            <Text color={theme.active}>AUTO-EXEC</Text>
-          </>
-        )}
-
-        {autoAccept && (
-          <>
-            <Text color={theme.border}> │ </Text>
-            <Text color={theme.active}>AUTO-EDIT</Text>
+            <Text color={executionMode === 'auto' ? theme.active : theme.accent}>
+              {executionMode.toUpperCase()}
+            </Text>
           </>
         )}
 

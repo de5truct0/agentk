@@ -26,7 +26,7 @@ interface AppProps {
   version: string;
 }
 
-type ExecutionMode = 'plan' | 'auto';
+type ExecutionMode = 'normal' | 'plan' | 'auto';
 type CouncilMode = 'solo' | 'council' | 'off';
 
 export const App: React.FC<AppProps> = ({ mode, version }) => {
@@ -44,7 +44,7 @@ export const App: React.FC<AppProps> = ({ mode, version }) => {
   const [totalTokens, setTotalTokens] = useState(0);
   const [startTime] = useState(new Date());
   const [error, setError] = useState<string | null>(null);
-  const [executionMode, setExecutionMode] = useState<ExecutionMode>('plan');
+  const [executionMode, setExecutionMode] = useState<ExecutionMode>('normal');
   const [activeAgent, setActiveAgent] = useState<AgentName | undefined>(undefined);
   const [completedAgents, setCompletedAgents] = useState<AgentName[]>([]);
   const [confirmationState, setConfirmationState] = useState<{
@@ -186,6 +186,7 @@ export const App: React.FC<AppProps> = ({ mode, version }) => {
     } else if (executionMode === 'plan') {
       await generatePlan(input);
     } else {
+      // normal or auto mode - executeTask handles autoAccept
       await executeTask(input);
     }
   };
@@ -448,34 +449,36 @@ Format your response clearly with headers.`;
         setActiveAgent(undefined);
         setCompletedAgents([]);
         break;
+      case 'normal':
+        setExecutionMode('normal');
+        setAutoAccept(false);
+        addSystemMessage('Normal mode. I will execute and ask for confirmation on edits.');
+        break;
       case 'plan':
         setExecutionMode('plan');
-        addSystemMessage('Plan mode enabled. I will show plans for approval before executing.');
+        setAutoAccept(false);
+        addSystemMessage('Plan mode. I will create a plan for approval before executing.');
         break;
       case 'auto':
         setConfirmationState({
-          message: '⚠️  Are you sure you want to enable Auto Mode? This will execute actions without further approval.',
+          message: '⚠️  Enable Auto Mode? This executes everything without any confirmations.',
           options: [
-            { label: 'Yes, enable auto mode', value: 'yes' },
-            { label: 'No, stay in plan mode', value: 'no' },
+            { label: 'Yes, enable auto', value: 'yes' },
+            { label: 'No, keep current mode', value: 'no' },
           ],
           onSelect: (value) => {
             setConfirmationState(null);
             if (value === 'yes') {
               setExecutionMode('auto');
-              addSystemMessage('Auto mode enabled. I will execute tasks directly without approval.');
-            } else {
-              addSystemMessage('Kept in plan mode.');
+              setAutoAccept(true);
+              addSystemMessage('Auto mode. No confirmations, executing everything directly.');
             }
           },
-          onCancel: () => {
-            setConfirmationState(null);
-            addSystemMessage('Kept in plan mode.');
-          },
+          onCancel: () => setConfirmationState(null),
         });
         break;
       case 'mode':
-        addSystemMessage(`Current execution mode: ${executionMode}\nUse /plan or /auto to switch.`);
+        addSystemMessage(`Current mode: ${executionMode}\nUse /normal, /plan, or /auto to switch.`);
         break;
       case 'agents':
         if (!activeAgent && completedAgents.length === 0) {
@@ -527,9 +530,10 @@ Format your response clearly with headers.`;
 /help     - Show this help
 /clear    - Clear chat history
 /status   - Show session status
-/plan     - Enable plan mode (ask before executing)
-/auto     - Enable auto mode (execute directly)
-/mode     - Show current execution mode
+/normal   - Normal mode (execute, confirm edits)
+/plan     - Plan mode (plan first, then execute)
+/auto     - Auto mode (no confirmations)
+/mode     - Show current mode
 /agents   - Show active agents
 /council  - Toggle council mode (multi-LLM consensus)
 /solo     - Enable solo council (multi-Claude personas)
@@ -539,7 +543,6 @@ Format your response clearly with headers.`;
 Keyboard shortcuts:
 ↑/↓       - Browse command history
 Tab       - Autocomplete commands
-Shift+Tab - Toggle auto-edit mode
 Esc       - Cancel operation (when processing)
 Esc Esc   - Exit (when idle)
 Ctrl+U    - Clear input line`,
@@ -611,29 +614,6 @@ Ctrl+U    - Clear input line`,
       }
     }
 
-    // Shift+Tab to toggle auto-accept
-    if (key.shift && key.tab) {
-      if (autoAccept) {
-        // Disable silently
-        setAutoAccept(false);
-      } else {
-        // Show confirmation prompt
-        setConfirmationState({
-          message: 'Enable auto-accept for code edits?',
-          options: [
-            { label: 'Yes, enable auto-accept', value: 'yes' },
-            { label: 'No, keep asking', value: 'no' },
-          ],
-          onSelect: (value) => {
-            setConfirmationState(null);
-            if (value === 'yes') {
-              setAutoAccept(true);
-            }
-          },
-          onCancel: () => setConfirmationState(null),
-        });
-      }
-    }
   });
 
   return (
