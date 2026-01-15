@@ -452,26 +452,26 @@ Format your response clearly with headers.`;
       case 'normal':
         setExecutionMode('normal');
         setAutoAccept(false);
-        addSystemMessage('Normal mode. I will execute and ask for confirmation on edits.');
+        // Status bar shows the mode change
         break;
       case 'plan':
         setExecutionMode('plan');
         setAutoAccept(false);
-        addSystemMessage('Plan mode. I will create a plan for approval before executing.');
+        // Status bar shows the mode change
         break;
       case 'auto':
+        // Only auto mode shows a warning confirmation
         setConfirmationState({
-          message: '⚠️  Enable Auto Mode? This executes everything without any confirmations.',
+          message: '⚠️  Enable Auto Mode? This executes everything without confirmations.',
           options: [
             { label: 'Yes, enable auto', value: 'yes' },
-            { label: 'No, keep current mode', value: 'no' },
+            { label: 'No, stay normal', value: 'no' },
           ],
           onSelect: (value) => {
             setConfirmationState(null);
             if (value === 'yes') {
               setExecutionMode('auto');
               setAutoAccept(true);
-              addSystemMessage('Auto mode. No confirmations, executing everything directly.');
             }
           },
           onCancel: () => setConfirmationState(null),
@@ -541,6 +541,7 @@ Format your response clearly with headers.`;
 /exit     - Exit AGENT-K
 
 Keyboard shortcuts:
+Shift+Tab - Cycle mode (normal/plan/auto)
 ↑/↓       - Browse command history
 Tab       - Autocomplete commands
 Esc       - Cancel operation (when processing)
@@ -573,8 +574,53 @@ Ctrl+U    - Clear input line`,
     }
   };
 
+  // Cycle execution mode (normal -> plan -> auto)
+  // Only shows warning for auto mode, otherwise just updates status bar silently
+  const cycleExecutionMode = () => {
+    const modes: ExecutionMode[] = ['normal', 'plan', 'auto'];
+    const currentIndex = modes.indexOf(executionMode);
+    const nextMode = modes[(currentIndex + 1) % modes.length];
+
+    if (nextMode === 'auto') {
+      // Show warning confirmation only for auto mode
+      setConfirmationState({
+        message: '⚠️  Enable Auto Mode? This executes everything without confirmations.',
+        options: [
+          { label: 'Yes, enable auto', value: 'yes' },
+          { label: 'No, stay normal', value: 'no' },
+        ],
+        onSelect: (value) => {
+          setConfirmationState(null);
+          if (value === 'yes') {
+            setExecutionMode('auto');
+            setAutoAccept(true);
+          } else {
+            // Rejected - go back to normal
+            setExecutionMode('normal');
+            setAutoAccept(false);
+          }
+        },
+        onCancel: () => {
+          setConfirmationState(null);
+          setExecutionMode('normal');
+          setAutoAccept(false);
+        },
+      });
+    } else {
+      // normal and plan modes switch silently - status bar shows the change
+      setExecutionMode(nextMode);
+      setAutoAccept(false);
+    }
+  };
+
   // Handle keyboard shortcuts
-  useInput((input, key) => {
+  useInput((_input, key) => {
+    // Shift+Tab to cycle execution mode
+    if (key.tab && key.shift && !isProcessing && !confirmationState && !questionWizardState) {
+      cycleExecutionMode();
+      return;
+    }
+
     // Escape key handling
     if (key.escape) {
       const now = Date.now();

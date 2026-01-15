@@ -23,10 +23,32 @@ const theme = {
   header: '#63b3ed',    // Blue for headers
 };
 
+// Pre-process text to remove orphaned markdown markers
+function cleanOrphanedMarkers(text: string): string {
+  let result = text;
+
+  // Remove orphaned ** (bold markers without pairs)
+  // Count ** occurrences - if odd, the last one is orphaned
+  const boldMatches = result.match(/\*\*/g);
+  if (boldMatches && boldMatches.length % 2 !== 0) {
+    // Find and remove the last unmatched **
+    const lastIndex = result.lastIndexOf('**');
+    result = result.slice(0, lastIndex) + result.slice(lastIndex + 2);
+  }
+
+  // Also handle case where ** appears at start or end without content
+  result = result.replace(/^\*\*\s*$/, '');
+  result = result.replace(/^\*\*(?!\S)/, '');
+  result = result.replace(/(?<!\S)\*\*$/, '');
+
+  return result;
+}
+
 // Parse inline markdown and return React elements
 function parseInlineMarkdown(text: string, defaultColor: string): React.ReactNode[] {
   const elements: React.ReactNode[] = [];
-  let remaining = text;
+  // Clean orphaned markers first
+  let remaining = cleanOrphanedMarkers(text);
   let key = 0;
 
   while (remaining.length > 0) {
@@ -61,9 +83,13 @@ function parseInlineMarkdown(text: string, defaultColor: string): React.ReactNod
       elements.push(<Text key={key++} color={defaultColor}>{remaining}</Text>);
       break;
     } else if (nextSpecial === 0) {
-      // Special char at start but didn't match pattern - treat as literal
-      elements.push(<Text key={key++} color={defaultColor}>{remaining[0]}</Text>);
-      remaining = remaining.slice(1);
+      // Special char at start but didn't match pattern - skip marker silently
+      // Check if it's a double asterisk that didn't match
+      if (remaining.startsWith('**')) {
+        remaining = remaining.slice(2);
+      } else {
+        remaining = remaining.slice(1);
+      }
     } else {
       // Add text before special char
       elements.push(<Text key={key++} color={defaultColor}>{remaining.slice(0, nextSpecial)}</Text>);

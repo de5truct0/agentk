@@ -48,8 +48,46 @@ export const Input: React.FC<InputProps> = ({
 
   const suggestion = getSuggestion();
 
+  // Navigate history up
+  const navigateHistoryUp = () => {
+    if (commandHistory.length > 0) {
+      if (historyIndex === -1) {
+        setTempValue(value);
+        const newIndex = commandHistory.length - 1;
+        setHistoryIndex(newIndex);
+        setValue(commandHistory[newIndex]);
+        setCursorPosition(commandHistory[newIndex].length);
+      } else if (historyIndex > 0) {
+        const newIndex = historyIndex - 1;
+        setHistoryIndex(newIndex);
+        setValue(commandHistory[newIndex]);
+        setCursorPosition(commandHistory[newIndex].length);
+      }
+    }
+  };
+
+  // Navigate history down
+  const navigateHistoryDown = () => {
+    if (historyIndex !== -1) {
+      if (historyIndex < commandHistory.length - 1) {
+        const newIndex = historyIndex + 1;
+        setHistoryIndex(newIndex);
+        setValue(commandHistory[newIndex]);
+        setCursorPosition(commandHistory[newIndex].length);
+      } else {
+        setHistoryIndex(-1);
+        setValue(tempValue);
+        setCursorPosition(tempValue.length);
+      }
+    }
+  };
+
   useInput((input, key) => {
     if (disabled) return;
+
+    // Handle arrow keys first (including escape sequence fallback)
+    const isUpArrow = key.upArrow || input === '\x1b[A' || input === '\x1bOA';
+    const isDownArrow = key.downArrow || input === '\x1b[B' || input === '\x1bOB';
 
     if (key.return) {
       if (value.trim()) {
@@ -65,34 +103,10 @@ export const Input: React.FC<InputProps> = ({
         setHistoryIndex(-1);
         setTempValue('');
       }
-    } else if (key.upArrow) {
-      if (commandHistory.length > 0) {
-        if (historyIndex === -1) {
-          setTempValue(value);
-          const newIndex = commandHistory.length - 1;
-          setHistoryIndex(newIndex);
-          setValue(commandHistory[newIndex]);
-          setCursorPosition(commandHistory[newIndex].length);
-        } else if (historyIndex > 0) {
-          const newIndex = historyIndex - 1;
-          setHistoryIndex(newIndex);
-          setValue(commandHistory[newIndex]);
-          setCursorPosition(commandHistory[newIndex].length);
-        }
-      }
-    } else if (key.downArrow) {
-      if (historyIndex !== -1) {
-        if (historyIndex < commandHistory.length - 1) {
-          const newIndex = historyIndex + 1;
-          setHistoryIndex(newIndex);
-          setValue(commandHistory[newIndex]);
-          setCursorPosition(commandHistory[newIndex].length);
-        } else {
-          setHistoryIndex(-1);
-          setValue(tempValue);
-          setCursorPosition(tempValue.length);
-        }
-      }
+    } else if (isUpArrow) {
+      navigateHistoryUp();
+    } else if (isDownArrow) {
+      navigateHistoryDown();
     } else if (key.backspace || key.delete) {
       if (cursorPosition > 0) {
         setValue(prev => prev.slice(0, cursorPosition - 1) + prev.slice(cursorPosition));
@@ -113,7 +127,8 @@ export const Input: React.FC<InputProps> = ({
       setCursorPosition(0);
     } else if (key.ctrl && input === 'e') {
       setCursorPosition(value.length);
-    } else if (key.tab) {
+    } else if (key.tab && !key.shift) {
+      // Plain Tab for autocomplete (Shift+Tab handled by App for mode cycling)
       if (suggestion) {
         const completed = value + suggestion;
         setValue(completed);
