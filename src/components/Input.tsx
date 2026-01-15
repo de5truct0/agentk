@@ -104,7 +104,7 @@ export const Input: React.FC<InputProps> = ({
     } else if (key.rightArrow) {
       setCursorPosition(pos => Math.min(value.length, pos + 1));
     } else if (key.ctrl && input === 'c') {
-      process.exit(0);
+      // Do nothing - allow text selection copy, use double-escape to exit
     } else if (key.ctrl && input === 'u') {
       setValue('');
       setCursorPosition(0);

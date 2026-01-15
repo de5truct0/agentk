@@ -72,7 +72,7 @@ export const ThinkingIndicator: React.FC<ThinkingIndicatorProps> = ({
       <Text color={theme.purple} bold>{symbols[frame]} </Text>
       <Text color={theme.highlight} italic>{verb}…</Text>
       <Text color={theme.dim}> (</Text>
-      <Text color={theme.dim}>ctrl+c to interrupt</Text>
+      <Text color={theme.dim}>esc esc to exit</Text>
       <Text color={theme.dim}> · </Text>
       <Text color={theme.accent}>{elapsed}</Text>
       {tokens > 0 && (

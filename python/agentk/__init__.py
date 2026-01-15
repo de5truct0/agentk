@@ -9,7 +9,7 @@ Modes:
 - Solo Mode: Multi-Claude CLI instances (no API keys needed)
 """
 
-__version__ = "2.3.0"
+__version__ = "2.3.3"
 __author__ = "Aditya Katiyar"
 
 from .llm import LLMClient, MODELS

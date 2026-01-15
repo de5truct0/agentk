@@ -9,5 +9,7 @@ export { RetroBox } from './Box.js';
 export { AgentStatus } from './AgentStatus.js';
 export { AgentPanel } from './AgentPanel.js';
 export type { AgentName, AgentState } from './AgentPanel.js';
+export { Confirmation } from './Confirmation.js';
+export type { ConfirmationOption } from './Confirmation.js';
 export { QuestionWizard } from './QuestionWizard.js';
 export type { Question, QuestionOption, QuestionWizardProps } from './QuestionWizard.js';

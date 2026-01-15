@@ -2,10 +2,12 @@
 import React from 'react';
 import { render } from 'ink';
 import meow from 'meow';
+import { createRequire } from 'module';
 import { App } from './components/App.js';
 import { checkClaudeInstalled } from './lib/claude.js';
 
-const VERSION = '2.3.0';
+const require = createRequire(import.meta.url);
+const { version: VERSION } = require('../package.json');
 
 const cli = meow(`
   Usage
@@ -27,7 +29,7 @@ const cli = meow(`
     /exit     Exit AGENT-K
 
   Keyboard
-    Ctrl+C    Exit
+    Esc Esc   Exit (double-press)
     Ctrl+U    Clear input line
 `, {
   importMeta: import.meta,
