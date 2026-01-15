@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agentk8"
-version = "2.3.0"
+version = "2.3.1"
 description = "Multi-LLM Council Backend for AGENT-K - Three-stage consensus with GPT, Gemini, and Claude"
 readme = "README.md"
 license = {text = "MIT"}
