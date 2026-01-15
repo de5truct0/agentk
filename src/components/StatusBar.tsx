@@ -138,10 +138,6 @@ export const StatusBar: React.FC<StatusBarProps> = ({
         <Text color={theme.dim}>  </Text>
         <Text color={theme.accent}>{modeLabel}</Text>
         <Text color={theme.border}> │ </Text>
-        <Text color={executionMode === 'auto' ? theme.active : theme.accent}>
-          {executionMode.toUpperCase()}
-        </Text>
-        <Text color={theme.border}> │ </Text>
 
         {/* Council mode: show model boxes */}
         {councilMode !== 'off' ? (
@@ -192,10 +188,17 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           </>
         )}
 
+        {executionMode === 'auto' && (
+          <>
+            <Text color={theme.border}> │ </Text>
+            <Text color={theme.active}>AUTO-EXEC</Text>
+          </>
+        )}
+
         {autoAccept && (
           <>
             <Text color={theme.border}> │ </Text>
-            <Text color={theme.active}>FAST</Text>
+            <Text color={theme.active}>AUTO-EDIT</Text>
           </>
         )}
 

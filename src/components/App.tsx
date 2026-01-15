@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Box, Text, useApp, useInput, Static } from 'ink';
 import { WelcomeBox } from './WelcomeBox.js';
 import { ChatMessage } from './ChatMessage.js';
@@ -65,6 +65,10 @@ export const App: React.FC<AppProps> = ({ mode, version }) => {
     originalInput: string;
     onComplete: (answers: { header: string; answer: string }[]) => void;
   } | null>(null);
+  const [showCancelHint, setShowCancelHint] = useState(false);
+
+  // Ref to track cancellation (can be checked inside async operations)
+  const cancelledRef = useRef(false);
 
   // Clean orchestrator internal tags from response
   const cleanOrchestratorTags = (response: string): string => {
@@ -188,6 +192,7 @@ export const App: React.FC<AppProps> = ({ mode, version }) => {
 
   // Execute via Council
   const executeCouncil = async (input: string) => {
+    cancelledRef.current = false;
     setIsProcessing(true);
     setProcessingStartTime(new Date());
     setActiveAgent('Orchestrator');
@@ -240,6 +245,7 @@ export const App: React.FC<AppProps> = ({ mode, version }) => {
 
   // Generate a plan for approval
   const generatePlan = async (input: string) => {
+    cancelledRef.current = false;
     setIsProcessing(true);
     setProcessingStartTime(new Date());
     setActiveAgent('Orchestrator');
@@ -342,6 +348,7 @@ Format your response clearly with headers.`;
 
   // Execute task directly
   const executeTask = async (input: string) => {
+    cancelledRef.current = false;
     setIsProcessing(true);
     setProcessingStartTime(new Date());
     setActiveAgent('Orchestrator');
@@ -532,8 +539,9 @@ Format your response clearly with headers.`;
 Keyboard shortcuts:
 ↑/↓       - Browse command history
 Tab       - Autocomplete commands
-Shift+Tab - Toggle auto-accept edits
-Esc Esc   - Exit
+Shift+Tab - Toggle auto-edit mode
+Esc       - Cancel operation (when processing)
+Esc Esc   - Exit (when idle)
 Ctrl+U    - Clear input line`,
           timestamp: new Date(),
         };
@@ -564,9 +572,32 @@ Ctrl+U    - Clear input line`,
 
   // Handle keyboard shortcuts
   useInput((input, key) => {
-    // Double-escape to exit (like Claude Code)
+    // Escape key handling
     if (key.escape) {
       const now = Date.now();
+
+      // If processing, single Esc cancels the operation
+      if (isProcessing) {
+        cancelledRef.current = true;
+        setIsProcessing(false);
+        setProcessingStartTime(null);
+        setActiveAgent(undefined);
+        setCouncilStage(null);
+        setShowCancelHint(true);
+        setTimeout(() => setShowCancelHint(false), 2000);
+
+        // Add cancellation message
+        const cancelMessage: Message = {
+          id: Date.now().toString(),
+          role: 'system',
+          content: '⚠ Operation cancelled',
+          timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, cancelMessage]);
+        return;
+      }
+
+      // Double-escape to exit (like Claude Code)
       if (now - lastEscapeTime < 500) {
         // Double escape - exit
         exit();
