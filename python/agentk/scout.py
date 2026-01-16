@@ -147,8 +147,13 @@ class Scout:
         
         return warnings
     
-    async def scan_project(self) -> Dict[str, Any]:
-        """Scan the project directory for context."""
+    async def scan_project(self, query: str = "") -> Dict[str, Any]:
+        """
+        Scan the project directory for context.
+        
+        Args:
+            query: User's query to guide file selection
+        """
         context = {
             "root": str(self.project_root),
             "files": [],
@@ -160,34 +165,90 @@ class Scout:
             tree = get_file_tree(str(self.project_root), max_depth=3)
             context["tree"] = tree
             
-            # Scan for key files
-            key_files = scan_directory(
-                str(self.project_root),
-                patterns=[
-                    "package.json",
-                    "pyproject.toml",
-                    "Cargo.toml",
-                    "go.mod",
-                    "README.md",
-                    "*.config.js",
-                    "*.config.ts",
-                ],
-                max_files=10,
-            )
-            context["files"] = key_files
+            # Smart Context Selection (RLM-inspired)
+            # Instead of blindly taking the top files, we ask the LLM to select
+            # the most relevant files based on the file tree and query.
             
-            # Generate summary using Claude
-            if key_files:
-                file_list = "\n".join([f"- {f}" for f in key_files[:5]])
-                summary_prompt = f"""Based on these project files, provide a 2-3 sentence summary of the project:
+            selected_files = []
+            
+            if query:
+                selection_prompt = f"""You are a senior developer's scout.
+Your goal is to identify the MOST RELEVANT files in the codebase to answer the user's query.
 
-Files found:
-{file_list}
+User Query: "{query}"
 
-Directory structure:
-{tree[:1000]}  # Truncate if too long
+Project Structure:
+{tree}
 
-Provide a brief summary of what this project is and its main technologies."""
+INSTRUCTIONS:
+1. Analyze the project structure and the query.
+2. Select up to 5 file paths that are most likely to contain the answer or relevant code.
+3. Return ONLY a JSON array of strings. Do not explain.
+   Example: ["src/main.py", "README.md", "config/settings.json"]
+"""
+                try:
+                    # Use Claude (Chairman) for this reasoning task
+                    response = await self.client.query(
+                        "claude",
+                        selection_prompt,
+                        "You are an expert code navigator. Return ONLY JSON."
+                    )
+                    
+                    if not response.error:
+                        # Clean up code blocks if present
+                        content = response.content.strip()
+                        if content.startswith("```json"):
+                            content = content.replace("```json", "").replace("```", "")
+                        elif content.startswith("```"):
+                            content = content.replace("```", "")
+                        
+                        selected_files = json.loads(content)
+                        # Ensure it's a list of strings
+                        if isinstance(selected_files, list):
+                            selected_files = [str(f) for f in selected_files if isinstance(f, str)]
+                        else:
+                            selected_files = []
+                except Exception:
+                    # Fallback to naive selection on error
+                    selected_files = []
+
+            # Fallback if no specific query or selection failed
+            if not selected_files:
+                selected_files = scan_directory(
+                    str(self.project_root),
+                    patterns=[
+                        "package.json",
+                        "pyproject.toml",
+                        "Cargo.toml",
+                        "go.mod",
+                        "README.md",
+                        "*.config.js",
+                        "*.config.ts",
+                    ],
+                    max_files=10,
+                )
+            
+            # Read the selected files
+            from .tools import read_file_safe
+            file_contents = []
+            for file_path in selected_files:
+                # Validate path exists and is safe
+                full_path = self.project_root / file_path
+                if full_path.exists() and full_path.is_file():
+                    content = read_file_safe(str(full_path), max_lines=200)
+                    if content:
+                        file_contents.append(f"File: {file_path}\n{content}")
+            
+            context["files"] = file_contents
+            
+            # Generate summary based on the *selected* context
+            if file_contents:
+                summary_prompt = f"""Based on these selected project files, provide a brief summary relevant to the query: "{query}"
+
+Files:
+{chr(10).join(file_contents)[:5000]}  # Truncate content for summary
+
+Provide a concise 2-sentence summary of the context found."""
                 
                 response = await self.client.query(
                     "claude",
@@ -260,7 +321,7 @@ Focus on official documentation, recent blog posts, or authoritative sources."""
         outdated_warnings = self.check_outdated_risk(query)
         
         # Scan project
-        project_context = await self.scan_project()
+        project_context = await self.scan_project(query)
         
         # Web search if needed
         web_results = None
