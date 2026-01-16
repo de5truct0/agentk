@@ -1,23 +1,28 @@
 # AGENT-K
 
-**Multi-Agent Claude Code Terminal Suite**
+**Multi-LLM Council Terminal Suite**
 
 ```
-▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
-  ◇ ─── AGENT-K ─── ◇ ─ Multi-Agent Intelligence System ─────────────── v2.0.0
-─────────────────────────────────────────────────────────────────────────────────
+╭──────────────────────────────────────────────── AGENT-K v2.3.7 ────────────────────────────────────────────────╮
+│      ___________________        ____....-----....____             Welcome to AGENT-K                           │
+│     (________________LL_)   ==============================                                                     │
+│         ______\   \_______.--'.  `---..._____...---'              Pack Intelligence System                     │
+│         `-------..__            ` ,/                                                                           │
+│                     `-._ -  -  - |                                                                              │
+│                         `-------'                                                                              │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
-A sophisticated terminal UI for orchestrating Claude AI agents. Built with React + Ink, featuring a beautiful dark theme and intelligent task analysis.
+A sophisticated terminal UI for orchestrating AI agents with **multi-LLM consensus**. Built with React + Ink, featuring Council mode for GPT + Gemini + Claude collaboration.
 
 ## Features
 
-- **Sophisticated UI** - Dark teal/purple theme inspired by modern terminal aesthetics
-- **Intelligent Orchestrator** - Analyzes task complexity and coordinates specialist agents
+- **Council Mode** - Multi-LLM consensus with GPT, Gemini, and Claude working together
+- **Three Execution Modes** - Normal (confirm edits), Plan (approval first), Auto (no confirmations)
+- **Smart Context Selection** - RLM-inspired file selection using LLM reasoning
+- **Scout Agent** - Real-time research with intelligent codebase navigation
+- **Beautiful UI** - Dark teal/purple theme with live token tracking
 - **Command History** - Use ↑/↓ arrows to browse past messages
-- **Live Token Tracking** - Real-time token usage display
-- **Animated Thinking Indicator** - Beautiful spinner with elapsed time
-- **Two Modes** - Development and ML Research
 
 ## Installation
 
@@ -32,71 +37,86 @@ brew tap de5truct0/agentk
 brew install agentk8
 ```
 
+### pip (Python backend)
+```bash
+pip install agentk8
+```
+
 ### From Source
 ```bash
 git clone https://github.com/de5truct0/agentk.git
 cd agentk
-npm install
-npm run build
-npm link
+npm install && npm run build && npm link
 ```
 
 ## Requirements
 
 - **Node.js** 18+
 - **Claude Code CLI** - [Install from claude.ai/code](https://claude.ai/code)
+- **Python 3.10+** - For Council mode (optional)
+- **API Keys** - For multi-LLM: `OPENAI_API_KEY`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`
 
 ## Quick Start
 
 ```bash
 # Start interactive session (Development mode)
-agentk
+agentk8
 
 # Start ML Research mode
-agentk --mode ml
+agentk8 --mode ml
 
 # Show help
-agentk --help
+agentk8 --help
 ```
 
-## Usage
+## Execution Modes
 
-### Chat Interface
+| Mode | Command | Behavior |
+|------|---------|----------|
+| **Normal** | `/normal` | Execute tasks, confirm before edits |
+| **Plan** | `/plan` | Create plan for approval before executing |
+| **Auto** | `/auto` | No confirmations, execute everything directly |
+
+Use `Shift+Tab` to cycle between modes, or type the command.
+
+## Council Mode
+
+Council mode enables **multi-LLM consensus** using three stages:
 
 ```
-◆ You
-  Build a REST API with authentication
+Stage 1: Initial Analysis
+  → GPT-4, Gemini, Claude analyze independently
 
-⣾ Synthesizing… (ctrl+c to interrupt · 12s · thinking)
+Stage 2: Cross-Review
+  → Each model reviews others' analyses
 
-◆ Orchestrator
-  <task_analysis>
-  ┌─────────────────────────────────────────────────────────
-  │ COMPLEXITY: Moderate
-  │ AGENTS: Engineer, Security, Tester
-  │ SUBTASKS: API endpoints, JWT auth, tests, security review
-  └─────────────────────────────────────────────────────────
-  </task_analysis>
-
-  [Detailed response...]
-  → 1,247 tokens
+Stage 3: Chairman Synthesis
+  → Claude synthesizes final consensus
 ```
 
-### Commands
+Toggle with `/council` command. Requires API keys for all three providers.
+
+## Commands
 
 | Command | Description |
 |---------|-------------|
 | `/help` | Show available commands |
 | `/clear` | Clear chat history |
 | `/status` | Show session status |
+| `/normal` | Normal mode (confirm edits) |
+| `/plan` | Plan mode (approval first) |
+| `/auto` | Auto mode (no confirmations) |
+| `/council` | Toggle Council mode |
+| `/models` | Show available LLM models |
 | `/exit` | Exit AGENT-K |
 
-### Keyboard Shortcuts
+## Keyboard Shortcuts
 
 | Key | Action |
 |-----|--------|
+| `Shift+Tab` | Cycle execution mode |
 | `↑` / `↓` | Browse command history |
-| `Ctrl+C` | Exit |
+| `Esc Esc` | Exit (double-tap) |
 | `Ctrl+U` | Clear input line |
 | `Ctrl+A` | Jump to start of line |
 | `Ctrl+E` | Jump to end of line |
@@ -111,7 +131,6 @@ agentk --help
 | **Engineer** | Code implementation, debugging |
 | **Tester** | Unit/integration tests, coverage |
 | **Security** | OWASP review, vulnerability detection |
-| **Scout** | Real-time research, best practices |
 
 ### ML Mode (`--mode ml`)
 
@@ -120,29 +139,24 @@ agentk --help
 | **Orchestrator** | ML project lifecycle coordination |
 | **Researcher** | Literature review, SOTA analysis |
 | **ML Engineer** | Model implementation, training |
-| **Data Engineer** | Data pipelines, preprocessing |
 | **Evaluator** | Metrics, benchmarking, experiments |
-| **Scout** | arXiv, HuggingFace, Papers With Code |
 
-## Orchestrator Intelligence
+## Smart Context Selection
 
-The Orchestrator uses a sophisticated prompt based on:
+The Scout agent uses **RLM-inspired** (Recursive Language Models) context selection:
 
-- [Anthropic's Multi-Agent Research System](https://www.anthropic.com/engineering/multi-agent-research-system) - Orchestrator-worker pattern
-- [CrewAI Framework](https://github.com/crewAIInc/crewAI) - Role-Goal-Backstory agents
-- [Claude 2026 Best Practices](https://promptbuilder.cc/blog/claude-prompt-engineering-best-practices-2026) - Contract-style prompts
-- [Microsoft Azure AI Patterns](https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/ai-agent-design-patterns) - Task decomposition
+1. Scans project file tree
+2. Asks LLM to select most relevant files for the query
+3. Reads only the selected files
+4. Falls back to pattern matching if LLM fails
 
-Every response includes:
-1. **Task Analysis** - Complexity assessment and agent identification
-2. **Structured Thinking** - Transparent reasoning process
-3. **Coordinated Response** - Synthesized output from relevant agents
+This dramatically improves context relevance compared to naive "top N files" approaches.
 
 ## Tech Stack
 
-- **React** + **Ink** - Terminal UI framework (same as Claude Code)
+- **React + Ink** - Terminal UI framework
 - **TypeScript** - Type-safe codebase
-- **Meow** - CLI argument parsing
+- **LiteLLM** - Multi-LLM Python backend
 - **Claude Code CLI** - AI backend
 
 ## Project Structure
@@ -153,49 +167,28 @@ agentk/
 │   ├── cli.tsx              # CLI entry point
 │   ├── components/
 │   │   ├── App.tsx          # Main application
-│   │   ├── Banner.tsx       # Header banner
+│   │   ├── StatusBar.tsx    # Footer with mode indicator
 │   │   ├── ChatMessage.tsx  # Message display
-│   │   ├── Input.tsx        # Input with history
-│   │   ├── StatusBar.tsx    # Footer status
-│   │   └── ThinkingIndicator.tsx
-│   ├── lib/
-│   │   └── claude.ts        # Claude CLI integration
-│   └── themes/
-│       └── retro.ts         # Color theme
-├── dist/                    # Compiled output
+│   │   └── Input.tsx        # Input with history
+│   └── lib/
+│       ├── claude.ts        # Claude CLI integration
+│       └── council.ts       # Multi-LLM council
+├── python/
+│   └── agentk/
+│       ├── council.py       # Council consensus logic
+│       ├── scout.py         # Smart Context Selection
+│       └── llm.py           # LiteLLM wrapper
 └── package.json
 ```
-
-## Configuration
-
-Environment variables:
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `AGENTK_MODE` | Default mode (`dev` or `ml`) | `dev` |
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run `npm run build` to compile
-5. Submit a pull request
 
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
 
-## Acknowledgments
-
-- Built with [Ink](https://github.com/vadimdemedes/ink) by Vadim Demedes
-- Powered by [Anthropic's Claude](https://anthropic.com)
-- Inspired by Claude Code's beautiful terminal UI
-
 ---
 
 <p align="center">
-<strong>AGENT-K</strong> - Multi-Agent Intelligence for Your Terminal
+<strong>AGENT-K v2.3.7</strong> - Multi-LLM Council Intelligence
 </p>
 
 <p align="center">
